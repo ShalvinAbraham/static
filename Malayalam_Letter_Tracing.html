@@ -183,8 +183,6 @@
             <button id="nextLetter" class="material-symbols-outlined" title="Next letter"
                 onclick="nextLetter()">skip_next</button>
         </div>
-
-
     </div>
 
     <script>
@@ -1238,7 +1236,6 @@
                 "ml": "ൽ",
                 "en": "l",
                 "group": "Chillus",
-                "dependants": [],
                 "examples": [
                     { "en": "nil", "ml": "നിൽ", "en-meaning": "Stand" }
                 ]
@@ -1247,7 +1244,6 @@
                 "ml": "ൾ",
                 "en": "ḷ",
                 "group": "Chillus",
-                "dependants": [],
                 "examples": [
                     { "en": "kaḷ", "ml": "കൾ", "en-meaning": "Times" }
                 ]
@@ -1256,7 +1252,6 @@
                 "ml": "ൻ",
                 "en": "n",
                 "group": "Chillus",
-                "dependants": [],
                 "examples": [
                     { "en": "man", "ml": "മൻ", "en-meaning": "Pride" }
                 ]
@@ -1265,7 +1260,6 @@
                 "ml": "ർ",
                 "en": "r",
                 "group": "Chillus",
-                "dependants": [],
                 "examples": [
                     { "en": "par", "ml": "പർ", "en-meaning": "Leaf" }
                 ]
@@ -1274,7 +1268,6 @@
                 "ml": "ൺ",
                 "en": "n",
                 "group": "Chillus",
-                "dependants": [],
                 "examples": [
                     { "en": "kaṇ", "ml": "കൺ", "en-meaning": "Eye" }
                 ]
@@ -1569,9 +1562,6 @@
                     lettersDiv.appendChild(parent);
                 }
             });
-
-
-
         }
 
         const nextLetterButton = document.getElementById("nextLetter");
@@ -1590,13 +1580,16 @@
             const currentIndex = currentCategoryLetters.findIndex(item => item.ml === currentLetter);
             nextLetterButton.disabled = (currentIndex >= currentCategoryLetters.length - 1);
             previousLetterButton.disabled = (currentIndex <= 0);
-            nextDependantLetterButton.disabled = true;
+            nextDependantLetterButton.disabled = (!letterObj.dependants?.length);
             previousDependantLetterButton.disabled = true;
+
             currentDependantLetter = '';
-            currentDependantIndex = 0;
+            currentDependantIndex = -1;
 
             generateLetterDetails(letterObj);
-            generateDependantLetters(letterObj);
+            if (letterObj.dependants) {
+                generateDependantLetters(letterObj);
+            }
         }
 
         function generateLetterDetails(letterObj) {
@@ -1616,15 +1609,13 @@
             const dependantLettersDiv = document.getElementById("dependantLetters");
             dependantLettersDiv.innerHTML = "";
 
-            if (letterObj.dependants) {
-                letterObj.dependants.forEach((dependant, index) => {
-                    const dependantButton = document.createElement("div");
-                    dependantButton.className = "dependant-letter-option";
-                    dependantButton.textContent = dependant.ml;
-                    dependantButton.onclick = () => changeDependantLetter(dependant);
-                    dependantLettersDiv.appendChild(dependantButton);
-                });
-            }
+            letterObj.dependants.forEach((dependant, index) => {
+                const dependantButton = document.createElement("div");
+                dependantButton.className = "dependant-letter-option";
+                dependantButton.textContent = dependant.ml;
+                dependantButton.onclick = () => changeDependantLetter(dependant);
+                dependantLettersDiv.appendChild(dependantButton);
+            });
         }
 
         function changeDependantLetter(dependantObj) {
