@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malayalam Letter Tracing</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #FFFAF0;
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            display: box;
+            margin-top: 20px;
+        }
+
+        .header {
+            margin: 20px;
+            margin-bottom: 0px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .categorySelect {
+            left: 20px;
+            position: absolute;
+            font-size: 20px;
+            padding: 4px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background-color: #ffebcd;
+            border: 2px solid #ff6347;
+            border-radius: 5px;
+        }
+
+        .letterDetails {
+            padding: 5px;
+            margin-bottom: 10px;
+            background-color: #ffebcd;
+            border: 2px solid #ff6347;
+        }
+
+        canvas {
+            border: 5px solid #ff6347;
+            background-color: white;
+            width: 800px;
+            height: 400px;
+            border-radius: 10px;
+            touch-action: none;
+        }
+
+        .controls {
+            margin-top: 5px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .controls>button {
+            background-color: #ff6347;
+            color: white;
+            font-size: 18px;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .controls>button:hover {
+            background-color: #ff4500;
+        }
+
+        .controls>button:disabled {
+            background-color: #cccccc;
+        }
+
+        .letter-option {
+            font-size: 22px;
+            cursor: pointer;
+            display: inline-block;
+            padding: 0px 10px;
+            height: 30px;
+            border: 2px solid #ff6347;
+            border-radius: 8px;
+            background-color: #ffebcd;
+            transition: background-color 0.3s ease;
+        }
+
+        .letter-option:hover {
+            background-color: #ff6347;
+            color: white;
+        }
+
+        .examples {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #555;
+        }
+
+        .sub-group-container {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+            padding: 0px 10px;
+            border-radius: 8px;
+            background-color: blanchedalmond;
+            justify-content: center;
+        }
+
+        .letter-select-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .dependant-letter-container {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px;
+        }
+
+        .dependant-letter-option {
+            font-size: 22px;
+            cursor: pointer;
+            display: inline-block;
+            padding: 0px 9px;
+            height: 30px;
+            border: 2px solid #ff6347;
+            border-radius: 8px;
+            background-color: aquamarine;
+            transition: background-color 0.3s ease;
+        }
+
+        .dependant-letter-option:hover {
+            background-color: #ff6347;
+            color: white;
+        }
+
+        .fullscreen {
+            width: 35px;
+            height: 35px;
+            right: 20px;
+            padding: 2px;
+            position: absolute;
+            background-color: #ffebcd;
+            border: 2px solid #ff6347;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div class="header">
+            <select id="categorySelect" class="categorySelect" title="Choose a letter category"
+                onchange="loadLetters()"></select>
+            <div id="letter-details" class="letterDetails"> </div>
+            <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
+        </div>
+
+        <div class="letter-select-container" id="letters"></div>
+        <div class="dependant-letter-container" id="dependantLetters"></div>
+
+        <canvas id="tracingCanvas" width="800" height="400"></canvas>
+        <div class="controls">
+            <button class="material-symbols-outlined" id="previousLetter" title="Previous letter"
+                onclick="previousLetter()">skip_previous</button>
+            <button class="material-symbols-outlined" id="previousDependantLetter" title="Previous dependant letter"
+                onclick="previousDependantLetter()">arrow_back</button>
+            <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
+            <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
+            <button class="material-symbols-outlined" title="Learn more" onclick="learn()">contact_support</button>
+            <button id="nextDependantLetter" class="material-symbols-outlined" title="Next dependant letter"
+                onclick="nextDependantLetter()">arrow_forward</button>
+            <button id="nextLetter" class="material-symbols-outlined" title="Next letter"
+                onclick="nextLetter()">skip_next</button>
+        </div>
+
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById("tracingCanvas");
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+        let currentDependantLetter = "";
+        let currentLetter = "";
+        let currentCategory = "";
+        let currentDependantIndex = 0;
+        let currentLetterObj = null;
+        let currentLetterInTemplate = "";
+
+        const letterData = [
+            {
+                "ml": "അ",
+                "en": "a",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "amma", "ml": "അമ്മ", "en-meaning": "Mother" },
+                    { "en": "akam", "ml": "അകം", "en-meaning": "Inside" }
+                ]
+            },
+            {
+                "ml": "ആ",
+                "en": "aa",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "aakasham", "ml": "ആകാശം", "en-meaning": "Sky" },
+                    { "en": "aaraamam", "ml": "ആരാമം", "en-meaning": "Comfort" }
+                ]
+            },
+            {
+                "ml": "ഇ",
+                "en": "i",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "ilam", "ml": "ഇലം", "en-meaning": "Young" },
+                    { "en": "iravi", "ml": "ഇരാവി", "en-meaning": "Night" }
+                ]
+            },
+            {
+                "ml": "ഈ",
+                "en": "ii",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "eedu", "ml": "ഈട്", "en-meaning": "Step" },
+                    { "en": "iira", "ml": "ഈറ", "en-meaning": "Courage" }
+                ]
+            },
+            {
+                "ml": "ഉ",
+                "en": "u",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "urakkam", "ml": "ഉറക്കം", "en-meaning": "Sleep" },
+                    { "en": "udakam", "ml": "ഉടകം", "en-meaning": "Water" }
+                ]
+            },
+            {
+                "ml": "ഊ",
+                "en": "uu",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "oolam", "ml": "ഊളം", "en-meaning": "Deep" },
+                    { "en": "oolal", "ml": "ഊളം", "en-meaning": "Sound" }
+                ]
+            },
+            {
+                "ml": "ഋ",
+                "en": "ru",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "ruchi", "ml": "രുചി", "en-meaning": "Taste" },
+                    { "en": "rithu", "ml": "രിതു", "en-meaning": "Season" }
+                ]
+            },
+            {
+                "ml": "എ",
+                "en": "e",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "ello", "ml": "എല്ലോ", "en-meaning": "Hello" },
+                    { "en": "ebam", "ml": "എബം", "en-meaning": "Love" }
+                ]
+            },
+            {
+                "ml": "ഏ",
+                "en": "ee",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "eela", "ml": "ഈല", "en-meaning": "Fish" },
+                    { "en": "eenadu", "ml": "ഈനാട്", "en-meaning": "Area" }
+                ]
+            },
+            {
+                "ml": "ഐ",
+                "en": "ai",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "aikya", "ml": "ഐക്യ", "en-meaning": "Unity" },
+                    { "en": "aimai", "ml": "ഐമൈ", "en-meaning": "Intention" }
+                ]
+            },
+            {
+                "ml": "ഒ",
+                "en": "o",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "olu", "ml": "ഒളം", "en-meaning": "Wind" },
+                    { "en": "orun", "ml": "ഒരുന", "en-meaning": "One" }
+                ]
+            },
+            {
+                "ml": "ഓ",
+                "en": "oo",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "oolam", "ml": "ഓലം", "en-meaning": "Sea" },
+                    { "en": "oovum", "ml": "ഓവും", "en-meaning": "All" }
+                ]
+            },
+            {
+                "ml": "ഔ",
+                "en": "au",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "audam", "ml": "ഔടം", "en-meaning": "Stone" },
+                    { "en": "aural", "ml": "ഔരൽ", "en-meaning": "Hearing" }
+                ]
+            },
+            {
+                "ml": "അം",
+                "en": "am",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "sambhavam", "ml": "സംഭവം", "en-meaning": "Event" },
+                    { "en": "sahya", "ml": "സഹ്യ", "en-meaning": "Support" }
+                ]
+            },
+            {
+                "ml": "അഃ",
+                "en": "ah",
+                "group": "Vowels",
+                "examples": [
+                    { "en": "ahimsa", "ml": "അഹിംസ", "en-meaning": "Nonviolence" }
+                ]
+            },
+            {
+                "ml": "ക",
+                "en": "ka",
+                "group": "Consonants",
+                "subgroup": "Velar",
+                "dependants": [
+                    { "ml": "കാ", "en": "kaa" },
+                    { "ml": "കി", "en": "ki" },
+                    { "ml": "കീ", "en": "kii" },
+                    { "ml": "കു", "en": "ku" },
+                    { "ml": "കൂ", "en": "kuu" },
+                    { "ml": "കൃ", "en": "kru" },
+                    { "ml": "കെ", "en": "ke" },
+                    { "ml": "കേ", "en": "kee" },
+                    { "ml": "കൈ", "en": "kai" },
+                    { "ml": "കൊ", "en": "ko" },
+                    { "ml": "കോ", "en": "koo" },
+                    { "ml": "കൗ", "en": "kau" },
+                    { "ml": "കം", "en": "kam" },
+                    { "ml": "കഃ", "en": "kah" }
+                ],
+                "examples": [
+                    { "en": "kalam", "ml": "കലം", "en-meaning": "Art" },
+                    { "en": "kavitha", "ml": "കവിത", "en-meaning": "Poetry" }
+                ]
+            },
+            {
+                "ml": "ഖ",
+                "en": "kha",
+                "group": "Consonants",
+                "subgroup": "Velar",
+                "dependants": [
+                    { "ml": "ഖാ", "en": "khaa" },
+                    { "ml": "ഖി", "en": "khi" },
+                    { "ml": "ഖീ", "en": "khii" },
+                    { "ml": "ഖു", "en": "khu" },
+                    { "ml": "ഖൂ", "en": "khuu" },
+                    { "ml": "ഖൃ", "en": "khru" },
+                    { "ml": "ഖെ", "en": "khe" },
+                    { "ml": "ഖേ", "en": "khee" },
+                    { "ml": "ഖൈ", "en": "khai" },
+                    { "ml": "ഖൊ", "en": "kho" },
+                    { "ml": "ഖോ", "en": "khoo" },
+                    { "ml": "ഖൗ", "en": "khau" },
+                    { "ml": "ഖം", "en": "kham" },
+                    { "ml": "ഖഃ", "en": "khah" }
+                ],
+                "examples": [
+                    { "en": "khadi", "ml": "ഖദി", "en-meaning": "Handspun cloth" }
+                ]
+            },
+            {
+                "ml": "ഗ",
+                "en": "ga",
+                "group": "Consonants",
+                "subgroup": "Velar",
+                "dependants": [
+                    { "ml": "ഗാ", "en": "gaa" },
+                    { "ml": "ഗി", "en": "gi" },
+                    { "ml": "ഗീ", "en": "gii" },
+                    { "ml": "ഗു", "en": "gu" },
+                    { "ml": "ഗൂ", "en": "guu" },
+                    { "ml": "ഗൃ", "en": "gru" },
+                    { "ml": "ഗെ", "en": "ge" },
+                    { "ml": "ഗേ", "en": "gee" },
+                    { "ml": "ഗൈ", "en": "gai" },
+                    { "ml": "ഗൊ", "en": "go" },
+                    { "ml": "ഗോ", "en": "goo" },
+                    { "ml": "ഗൗ", "en": "gau" },
+                    { "ml": "ഗം", "en": "gam" },
+                    { "ml": "ഗഃ", "en": "gah" }
+                ],
+                "examples": [
+                    { "en": "gaja", "ml": "ഗജ", "en-meaning": "Elephant" }
+                ]
+            },
+            {
+                "ml": "ഘ",
+                "en": "gha",
+                "group": "Consonants",
+                "subgroup": "Velar",
+                "dependants": [
+                    { "ml": "ഘാ", "en": "ghaa" },
+                    { "ml": "ഘി", "en": "ghi" },
+                    { "ml": "ഘീ", "en": "ghii" },
+                    { "ml": "ഘു", "en": "ghu" },
+                    { "ml": "ഘൂ", "en": "ghuu" },
+                    { "ml": "ഘൃ", "en": "ghru" },
+                    { "ml": "ഘെ", "en": "ghe" },
+                    { "ml": "ഘേ", "en": "ghee" },
+                    { "ml": "ഘൈ", "en": "ghai" },
+                    { "ml": "ഘൊ", "en": "gho" },
+                    { "ml": "ഘോ", "en": "ghoo" },
+                    { "ml": "ഘൗ", "en": "ghau" },
+                    { "ml": "ഘം", "en": "gham" },
+                    { "ml": "ഘഃ", "en": "ghah" }
+                ],
+                "examples": [
+                    { "en": "ghanta", "ml": "ഘണ്ട", "en-meaning": "Bell" }
+                ]
+            },
+            {
+                "ml": "ങ",
+                "en": "ṅa",
+                "group": "Consonants",
+                "subgroup": "Velar",
+                "dependants": [
+                    { "ml": "ങാ", "en": "ṅaa" },
+                    { "ml": "ങി", "en": "ṅi" },
+                    { "ml": "ങീ", "en": "ṅii" },
+                    { "ml": "ങു", "en": "ṅu" },
+                    { "ml": "ങൂ", "en": "ṅuu" },
+                    { "ml": "ങൃ", "en": "ṅru" },
+                    { "ml": "ങെ", "en": "ṅe" },
+                    { "ml": "ങേ", "en": "ṅee" },
+                    { "ml": "ങൈ", "en": "ṅai" },
+                    { "ml": "ങൊ", "en": "ṅo" },
+                    { "ml": "ങോ", "en": "ṅoo" },
+                    { "ml": "ങൗ", "en": "ṅau" },
+                    { "ml": "ങം", "en": "ṅam" },
+                    { "ml": "ങഃ", "en": "ṅah" }
+                ],
+                "examples": [
+                    { "en": "ṅanam", "ml": "ങണം", "en-meaning": "Knowledge" }
+                ]
+            },
+            {
+                "ml": "ച",
+                "en": "cha",
+                "group": "Consonants",
+                "subgroup": "Postalveolar",
+                "dependants": [
+                    { "ml": "ചാ", "en": "chaa" },
+                    { "ml": "ചി", "en": "chi" },
+                    { "ml": "ചീ", "en": "chii" },
+                    { "ml": "ചു", "en": "chu" },
+                    { "ml": "ചൂ", "en": "chuu" },
+                    { "ml": "ചൃ", "en": "chru" },
+                    { "ml": "ചെ", "en": "che" },
+                    { "ml": "ചേ", "en": "chee" },
+                    { "ml": "ചൈ", "en": "chai" },
+                    { "ml": "ചൊ", "en": "cho" },
+                    { "ml": "ചോ", "en": "choo" },
+                    { "ml": "ചൗ", "en": "chau" },
+                    { "ml": "ചം", "en": "cham" },
+                    { "ml": "ചഃ", "en": "chah" }
+                ],
+                "examples": [
+                    { "en": "chaya", "ml": "ചായ", "en-meaning": "Tea" }
+                ]
+            },
+            {
+                "ml": "ഛ",
+                "en": "chha",
+                "group": "Consonants",
+                "subgroup": "Postalveolar",
+                "dependants": [
+                    { "ml": "ഛാ", "en": "chhaa" },
+                    { "ml": "ഛി", "en": "chhi" },
+                    { "ml": "ഛീ", "en": "chhii" },
+                    { "ml": "ഛു", "en": "chhu" },
+                    { "ml": "ഛൂ", "en": "chhuu" },
+                    { "ml": "ഛൃ", "en": "chhru" },
+                    { "ml": "ഛെ", "en": "chhe" },
+                    { "ml": "ഛേ", "en": "chhee" },
+                    { "ml": "ഛൈ", "en": "chhai" },
+                    { "ml": "ഛൊ", "en": "chho" },
+                    { "ml": "ഛോ", "en": "chhoo" },
+                    { "ml": "ഛൗ", "en": "chhau" },
+                    { "ml": "ഛം", "en": "chham" },
+                    { "ml": "ഛഃ", "en": "chhah" }
+                ],
+                "examples": [
+                    { "en": "chhaya", "ml": "ഛായ", "en-meaning": "Shadow" }
+                ]
+            },
+            {
+                "ml": "ജ",
+                "en": "ja",
+                "group": "Consonants",
+                "subgroup": "Postalveolar",
+                "dependants": [
+                    { "ml": "ജാ", "en": "jaa" },
+                    { "ml": "ജി", "en": "ji" },
+                    { "ml": "ജീ", "en": "jii" },
+                    { "ml": "ജു", "en": "ju" },
+                    { "ml": "ജൂ", "en": "juu" },
+                    { "ml": "ജൃ", "en": "jru" },
+                    { "ml": "ജെ", "en": "je" },
+                    { "ml": "ജേ", "en": "jee" },
+                    { "ml": "ജൈ", "en": "jai" },
+                    { "ml": "ജൊ", "en": "jo" },
+                    { "ml": "ജോ", "en": "joo" },
+                    { "ml": "ജൗ", "en": "jau" },
+                    { "ml": "ജം", "en": "jam" },
+                    { "ml": "ജഃ", "en": "jah" }
+                ],
+                "examples": [
+                    { "en": "jala", "ml": "ജല", "en-meaning": "Water" }
+                ]
+            },
+            {
+                "ml": "ഝ",
+                "en": "jha",
+                "group": "Consonants",
+                "subgroup": "Postalveolar",
+                "dependants": [
+                    { "ml": "ഝാ", "en": "jhaa" },
+                    { "ml": "ഝി", "en": "jhi" },
+                    { "ml": "ഝീ", "en": "jhii" },
+                    { "ml": "ഝു", "en": "jhu" },
+                    { "ml": "ഝൂ", "en": "jhuu" },
+                    { "ml": "ഝൃ", "en": "jhru" },
+                    { "ml": "ഝെ", "en": "jhe" },
+                    { "ml": "ഝേ", "en": "jhee" },
+                    { "ml": "ഝൈ", "en": "jhai" },
+                    { "ml": "ഝൊ", "en": "jho" },
+                    { "ml": "ഝോ", "en": "jhoo" },
+                    { "ml": "ഝൗ", "en": "jhau" },
+                    { "ml": "ഝം", "en": "jham" },
+                    { "ml": "ഝഃ", "en": "jhah" }
+                ],
+                "examples": [
+                    { "en": "jhanam", "ml": "ഝനം", "en-meaning": "Bell" }
+                ]
+            },
+            {
+                "ml": "ഞ",
+                "en": "ña",
+                "group": "Consonants",
+                "subgroup": "Postalveolar",
+                "dependants": [
+                    { "ml": "ഞാ", "en": "ñaa" },
+                    { "ml": "ഞി", "en": "ñi" },
+                    { "ml": "ഞീ", "en": "ñii" },
+                    { "ml": "ഞു", "en": "ñu" },
+                    { "ml": "ഞൂ", "en": "ñuu" },
+                    { "ml": "ഞൃ", "en": "ñru" },
+                    { "ml": "ഞെ", "en": "ñe" },
+                    { "ml": "ഞേ", "en": "ñee" },
+                    { "ml": "ഞൈ", "en": "ñai" },
+                    { "ml": "ഞൊ", "en": "ño" },
+                    { "ml": "ഞോ", "en": "ñoo" },
+                    { "ml": "ഞൗ", "en": "ñau" },
+                    { "ml": "ഞം", "en": "ñam" },
+                    { "ml": "ഞഃ", "en": "ñah" }
+                ],
+                "examples": [
+                    { "en": "ñanam", "ml": "ഞണം", "en-meaning": "Knowledge" }
+                ]
+            },
+            {
+                "ml": "ട",
+                "en": "ṭa",
+                "group": "Consonants",
+                "subgroup": "Retroflex",
+                "dependants": [
+                    { "ml": "ടാ", "en": "ṭaa" },
+                    { "ml": "ടി", "en": "ṭi" },
+                    { "ml": "ടീ", "en": "ṭii" },
+                    { "ml": "ടു", "en": "ṭu" },
+                    { "ml": "ടൂ", "en": "ṭuu" },
+                    { "ml": "ടൃ", "en": "ṭru" },
+                    { "ml": "ടെ", "en": "ṭe" },
+                    { "ml": "ടേ", "en": "ṭee" },
+                    { "ml": "ടൈ", "en": "ṭai" },
+                    { "ml": "ടൊ", "en": "ṭo" },
+                    { "ml": "ടോ", "en": "ṭoo" },
+                    { "ml": "ടൗ", "en": "ṭau" },
+                    { "ml": "ടം", "en": "ṭam" },
+                    { "ml": "ടഃ", "en": "ṭah" }
+                ],
+                "examples": [
+                    { "en": "ṭankam", "ml": "ടങ്കം", "en-meaning": "Coin" }
+                ]
+            },
+            {
+                "ml": "ഠ",
+                "en": "ṭha",
+                "group": "Consonants",
+                "subgroup": "Retroflex",
+                "dependants": [
+                    { "ml": "ഠാ", "en": "ṭhaa" },
+                    { "ml": "ഠി", "en": "ṭhi" },
+                    { "ml": "ഠീ", "en": "ṭhii" },
+                    { "ml": "ഠു", "en": "ṭhu" },
+                    { "ml": "ഠൂ", "en": "ṭhuu" },
+                    { "ml": "ഠൃ", "en": "ṭhru" },
+                    { "ml": "ഠെ", "en": "ṭhe" },
+                    { "ml": "ഠേ", "en": "ṭhee" },
+                    { "ml": "ഠൈ", "en": "ṭhai" },
+                    { "ml": "ഠൊ", "en": "ṭho" },
+                    { "ml": "ഠോ", "en": "ṭhoo" },
+                    { "ml": "ഠൗ", "en": "ṭhau" },
+                    { "ml": "ഠം", "en": "ṭham" },
+                    { "ml": "ഠഃ", "en": "ṭhah" }
+                ],
+                "examples": [
+                    { "en": "ṭhalam", "ml": "ഠലം", "en-meaning": "Stage" }
+                ]
+            },
+            {
+                "ml": "ഡ",
+                "en": "ḍa",
+                "group": "Consonants",
+                "subgroup": "Retroflex",
+                "dependants": [
+                    { "ml": "ഡാ", "en": "ḍaa" },
+                    { "ml": "ഡി", "en": "ḍi" },
+                    { "ml": "ഡീ", "en": "ḍii" },
+                    { "ml": "ഡു", "en": "ḍu" },
+                    { "ml": "ഡൂ", "en": "ḍuu" },
+                    { "ml": "ഡൃ", "en": "ḍru" },
+                    { "ml": "ഡെ", "en": "ḍe" },
+                    { "ml": "ഡേ", "en": "ḍee" },
+                    { "ml": "ഡൈ", "en": "ḍai" },
+                    { "ml": "ഡൊ", "en": "ḍo" },
+                    { "ml": "ഡോ", "en": "ḍoo" },
+                    { "ml": "ഡൗ", "en": "ḍau" },
+                    { "ml": "ഡം", "en": "ḍam" },
+                    { "ml": "ഡഃ", "en": "ḍah" }
+                ],
+                "examples": [
+                    { "en": "ḍakka", "ml": "ഡക്ക", "en-meaning": "Push" }
+                ]
+            },
+            {
+                "ml": "ഢ",
+                "en": "ḍha",
+                "group": "Consonants",
+                "subgroup": "Retroflex",
+                "dependants": [
+                    { "ml": "ഢാ", "en": "ḍhaa" },
+                    { "ml": "ഢി", "en": "ḍhi" },
+                    { "ml": "ഢീ", "en": "ḍhii" },
+                    { "ml": "ഢു", "en": "ḍhu" },
+                    { "ml": "ഢൂ", "en": "ḍhuu" },
+                    { "ml": "ഢൃ", "en": "ḍhru" },
+                    { "ml": "ഢെ", "en": "ḍhe" },
+                    { "ml": "ഢേ", "en": "ḍhee" },
+                    { "ml": "ഢൈ", "en": "ḍhai" },
+                    { "ml": "ഢൊ", "en": "ḍho" },
+                    { "ml": "ഢോ", "en": "ḍhoo" },
+                    { "ml": "ഢൗ", "en": "ḍhau" },
+                    { "ml": "ഢം", "en": "ḍham" },
+                    { "ml": "ഢഃ", "en": "ḍhah" }
+                ],
+                "examples": [
+                    { "en": "ḍhakka", "ml": "ഢക്ക", "en-meaning": "Push" }
+                ]
+            },
+            {
+                "ml": "ണ",
+                "en": "ṇa",
+                "group": "Consonants",
+                "subgroup": "Retroflex",
+                "dependants": [
+                    { "ml": "ണാ", "en": "ṇaa" },
+                    { "ml": "ണി", "en": "ṇi" },
+                    { "ml": "ണീ", "en": "ṇii" },
+                    { "ml": "ണു", "en": "ṇu" },
+                    { "ml": "ണൂ", "en": "ṇuu" },
+                    { "ml": "ണൃ", "en": "ṇru" },
+                    { "ml": "ണെ", "en": "ṇe" },
+                    { "ml": "ണേ", "en": "ṇee" },
+                    { "ml": "ണൈ", "en": "ṇai" },
+                    { "ml": "ണൊ", "en": "ṇo" },
+                    { "ml": "ണോ", "en": "ṇoo" },
+                    { "ml": "ണൗ", "en": "ṇau" },
+                    { "ml": "ണം", "en": "ṇam" },
+                    { "ml": "ണഃ", "en": "ṇah" }
+                ],
+                "examples": [
+                    { "en": "ṇanam", "ml": "ണണം", "en-meaning": "Knowledge" }
+                ]
+            },
+            {
+                "ml": "ത",
+                "en": "ta",
+                "group": "Consonants",
+                "subgroup": "Dental",
+                "dependants": [
+                    { "ml": "താ", "en": "taa" },
+                    { "ml": "തി", "en": "ti" },
+                    { "ml": "തീ", "en": "tii" },
+                    { "ml": "തു", "en": "tu" },
+                    { "ml": "തൂ", "en": "tuu" },
+                    { "ml": "തൃ", "en": "tru" },
+                    { "ml": "തെ", "en": "te" },
+                    { "ml": "തേ", "en": "tee" },
+                    { "ml": "തൈ", "en": "tai" },
+                    { "ml": "തൊ", "en": "to" },
+                    { "ml": "തോ", "en": "too" },
+                    { "ml": "തൗ", "en": "tau" },
+                    { "ml": "തം", "en": "tam" },
+                    { "ml": "തഃ", "en": "tah" }
+                ],
+                "examples": [
+                    { "en": "tala", "ml": "തല", "en-meaning": "Head" }
+                ]
+            },
+            {
+                "ml": "ഥ",
+                "en": "tha",
+                "group": "Consonants",
+                "subgroup": "Dental",
+                "dependants": [
+                    { "ml": "ഥാ", "en": "thaa" },
+                    { "ml": "ഥി", "en": "thi" },
+                    { "ml": "ഥീ", "en": "thii" },
+                    { "ml": "ഥു", "en": "thu" },
+                    { "ml": "ഥൂ", "en": "thuu" },
+                    { "ml": "ഥൃ", "en": "thru" },
+                    { "ml": "ഥെ", "en": "the" },
+                    { "ml": "ഥേ", "en": "thee" },
+                    { "ml": "ഥൈ", "en": "thai" },
+                    { "ml": "ഥൊ", "en": "tho" },
+                    { "ml": "ഥോ", "en": "thoo" },
+                    { "ml": "ഥൗ", "en": "thau" },
+                    { "ml": "ഥം", "en": "tham" },
+                    { "ml": "ഥഃ", "en": "thah" }
+                ],
+                "examples": [
+                    { "en": "thalam", "ml": "ഥലം", "en-meaning": "Stage" }
+                ]
+            },
+            {
+                "ml": "ദ",
+                "en": "da",
+                "group": "Consonants",
+                "subgroup": "Dental",
+                "dependants": [
+                    { "ml": "ദാ", "en": "daa" },
+                    { "ml": "ദി", "en": "di" },
+                    { "ml": "ദീ", "en": "dii" },
+                    { "ml": "ദു", "en": "du" },
+                    { "ml": "ദൂ", "en": "duu" },
+                    { "ml": "ദൃ", "en": "dru" },
+                    { "ml": "ദെ", "en": "de" },
+                    { "ml": "ദേ", "en": "dee" },
+                    { "ml": "ദൈ", "en": "dai" },
+                    { "ml": "ദൊ", "en": "do" },
+                    { "ml": "ദോ", "en": "doo" },
+                    { "ml": "ദൗ", "en": "dau" },
+                    { "ml": "ദം", "en": "dam" },
+                    { "ml": "ദഃ", "en": "dah" }
+                ],
+                "examples": [
+                    { "en": "dalam", "ml": "ദലം", "en-meaning": "Leaf" }
+                ]
+            },
+            {
+                "ml": "ധ",
+                "en": "dha",
+                "group": "Consonants",
+                "subgroup": "Dental",
+                "dependants": [
+                    { "ml": "ധാ", "en": "dhaa" },
+                    { "ml": "ധി", "en": "dhi" },
+                    { "ml": "ധീ", "en": "dhii" },
+                    { "ml": "ധു", "en": "dhu" },
+                    { "ml": "ധൂ", "en": "dhuu" },
+                    { "ml": "ധൃ", "en": "dhru" },
+                    { "ml": "ധെ", "en": "dhe" },
+                    { "ml": "ധേ", "en": "dhee" },
+                    { "ml": "ധൈ", "en": "dhai" },
+                    { "ml": "ധൊ", "en": "dho" },
+                    { "ml": "ധോ", "en": "dhoo" },
+                    { "ml": "ധൗ", "en": "dhau" },
+                    { "ml": "ധം", "en": "dham" },
+                    { "ml": "ധഃ", "en": "dhah" }
+                ],
+                "examples": [
+                    { "en": "dhanam", "ml": "ധനം", "en-meaning": "Wealth" }
+                ]
+            },
+            {
+                "ml": "ന",
+                "en": "na",
+                "group": "Consonants",
+                "subgroup": "Dental",
+                "dependants": [
+                    { "ml": "നാ", "en": "naa" },
+                    { "ml": "നി", "en": "ni" },
+                    { "ml": "നീ", "en": "nii" },
+                    { "ml": "നു", "en": "nu" },
+                    { "ml": "നൂ", "en": "nuu" },
+                    { "ml": "നൃ", "en": "nru" },
+                    { "ml": "നെ", "en": "ne" },
+                    { "ml": "നേ", "en": "nee" },
+                    { "ml": "നൈ", "en": "nai" },
+                    { "ml": "നൊ", "en": "no" },
+                    { "ml": "നോ", "en": "noo" },
+                    { "ml": "നൗ", "en": "nau" },
+                    { "ml": "നം", "en": "nam" },
+                    { "ml": "നഃ", "en": "nah" }
+                ],
+                "examples": [
+                    { "en": "nalam", "ml": "നലം", "en-meaning": "Good" }
+                ]
+            },
+            {
+                "ml": "പ",
+                "en": "pa",
+                "group": "Consonants",
+                "subgroup": "Labial",
+                "dependants": [
+                    { "ml": "പാ", "en": "paa" },
+                    { "ml": "പി", "en": "pi" },
+                    { "ml": "പീ", "en": "pii" },
+                    { "ml": "പു", "en": "pu" },
+                    { "ml": "പൂ", "en": "puu" },
+                    { "ml": "പൃ", "en": "pru" },
+                    { "ml": "പെ", "en": "pe" },
+                    { "ml": "പേ", "en": "pee" },
+                    { "ml": "പൈ", "en": "pai" },
+                    { "ml": "പൊ", "en": "po" },
+                    { "ml": "പോ", "en": "poo" },
+                    { "ml": "പൗ", "en": "pau" },
+                    { "ml": "പം", "en": "pam" },
+                    { "ml": "പഃ", "en": "pah" }
+                ],
+                "examples": [
+                    { "en": "pala", "ml": "പല", "en-meaning": "Many" }
+                ]
+            },
+            {
+                "ml": "ഫ",
+                "en": "pha",
+                "group": "Consonants",
+                "subgroup": "Labial",
+                "dependants": [
+                    { "ml": "ഫാ", "en": "phaa" },
+                    { "ml": "ഫി", "en": "phi" },
+                    { "ml": "ഫീ", "en": "phii" },
+                    { "ml": "ഫു", "en": "phu" },
+                    { "ml": "ഫൂ", "en": "phuu" },
+                    { "ml": "ഫൃ", "en": "phru" },
+                    { "ml": "ഫെ", "en": "phe" },
+                    { "ml": "ഫേ", "en": "phee" },
+                    { "ml": "ഫൈ", "en": "phai" },
+                    { "ml": "ഫൊ", "en": "pho" },
+                    { "ml": "ഫോ", "en": "phoo" },
+                    { "ml": "ഫൗ", "en": "phau" },
+                    { "ml": "ഫം", "en": "pham" },
+                    { "ml": "ഫഃ", "en": "phah" }
+                ],
+                "examples": [
+                    { "en": "phalam", "ml": "ഫലം", "en-meaning": "Fruit" }
+                ]
+            },
+            {
+                "ml": "ബ",
+                "en": "ba",
+                "group": "Consonants",
+                "subgroup": "Labial",
+                "dependants": [
+                    { "ml": "ബാ", "en": "baa" },
+                    { "ml": "ബി", "en": "bi" },
+                    { "ml": "ബീ", "en": "bii" },
+                    { "ml": "ബു", "en": "bu" },
+                    { "ml": "ബൂ", "en": "buu" },
+                    { "ml": "ബൃ", "en": "bru" },
+                    { "ml": "ബെ", "en": "be" },
+                    { "ml": "ബേ", "en": "bee" },
+                    { "ml": "ബൈ", "en": "bai" },
+                    { "ml": "ബൊ", "en": "bo" },
+                    { "ml": "ബോ", "en": "boo" },
+                    { "ml": "ബൗ", "en": "bau" },
+                    { "ml": "ബം", "en": "bam" },
+                    { "ml": "ബഃ", "en": "bah" }
+                ],
+                "examples": [
+                    { "en": "balam", "ml": "ബലം", "en-meaning": "Strength" }
+                ]
+            },
+            {
+                "ml": "ഭ",
+                "en": "bha",
+                "group": "Consonants",
+                "subgroup": "Labial",
+                "dependants": [
+                    { "ml": "ഭാ", "en": "bhaa" },
+                    { "ml": "ഭി", "en": "bhi" },
+                    { "ml": "ഭീ", "en": "bhii" },
+                    { "ml": "ഭു", "en": "bhu" },
+                    { "ml": "ഭൂ", "en": "bhuu" },
+                    { "ml": "ഭൃ", "en": "bhru" },
+                    { "ml": "ഭെ", "en": "bhe" },
+                    { "ml": "ഭേ", "en": "bhee" },
+                    { "ml": "ഭൈ", "en": "bhai" },
+                    { "ml": "ഭൊ", "en": "bho" },
+                    { "ml": "ഭോ", "en": "bhoo" },
+                    { "ml": "ഭൗ", "en": "bhau" },
+                    { "ml": "ഭം", "en": "bham" },
+                    { "ml": "ഭഃ", "en": "bhah" }
+                ],
+                "examples": [
+                    { "en": "bhanam", "ml": "ഭനം", "en-meaning": "Light" }
+                ]
+            },
+            {
+                "ml": "മ",
+                "en": "ma",
+                "group": "Consonants",
+                "subgroup": "Labial",
+                "dependants": [
+                    { "ml": "മാ", "en": "maa" },
+                    { "ml": "മി", "en": "mi" },
+                    { "ml": "മീ", "en": "mii" },
+                    { "ml": "മു", "en": "mu" },
+                    { "ml": "മൂ", "en": "muu" },
+                    { "ml": "മൃ", "en": "mru" },
+                    { "ml": "മെ", "en": "me" },
+                    { "ml": "മേ", "en": "mee" },
+                    { "ml": "മൈ", "en": "mai" },
+                    { "ml": "മൊ", "en": "mo" },
+                    { "ml": "മോ", "en": "moo" },
+                    { "ml": "മൗ", "en": "mau" },
+                    { "ml": "മം", "en": "mam" },
+                    { "ml": "മഃ", "en": "mah" }
+                ],
+                "examples": [
+                    { "en": "mala", "ml": "മല", "en-meaning": "Mountain" }
+                ]
+            },
+            {
+                "ml": "യ",
+                "en": "ya",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "യാ", "en": "yaa" },
+                    { "ml": "യി", "en": "yi" },
+                    { "ml": "യീ", "en": "yii" },
+                    { "ml": "യു", "en": "yu" },
+                    { "ml": "യൂ", "en": "yuu" },
+                    { "ml": "യൃ", "en": "yru" },
+                    { "ml": "യെ", "en": "ye" },
+                    { "ml": "യേ", "en": "yee" },
+                    { "ml": "യൈ", "en": "yai" },
+                    { "ml": "യൊ", "en": "yo" },
+                    { "ml": "യോ", "en": "yoo" },
+                    { "ml": "യൗ", "en": "yau" },
+                    { "ml": "യം", "en": "yam" },
+                    { "ml": "യഃ", "en": "yah" }
+                ],
+                "examples": [
+                    { "en": "yatra", "ml": "യാത്ര", "en-meaning": "Journey" }
+                ]
+            },
+            {
+                "ml": "ര",
+                "en": "ra",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "രാ", "en": "raa" },
+                    { "ml": "രി", "en": "ri" },
+                    { "ml": "രീ", "en": "rii" },
+                    { "ml": "രു", "en": "ru" },
+                    { "ml": "രൂ", "en": "ruu" },
+                    { "ml": "രൃ", "en": "rru" },
+                    { "ml": "രെ", "en": "re" },
+                    { "ml": "രേ", "en": "ree" },
+                    { "ml": "രൈ", "en": "rai" },
+                    { "ml": "രൊ", "en": "ro" },
+                    { "ml": "രോ", "en": "roo" },
+                    { "ml": "രൗ", "en": "rau" },
+                    { "ml": "രം", "en": "ram" },
+                    { "ml": "രഃ", "en": "rah" }
+                ],
+                "examples": [
+                    { "en": "raja", "ml": "രാജ", "en-meaning": "King" }
+                ]
+            },
+            {
+                "ml": "ല",
+                "en": "la",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "ലാ", "en": "laa" },
+                    { "ml": "ലി", "en": "li" },
+                    { "ml": "ലീ", "en": "lii" },
+                    { "ml": "ലു", "en": "lu" },
+                    { "ml": "ലൂ", "en": "luu" },
+                    { "ml": "ലൃ", "en": "lru" },
+                    { "ml": "ലെ", "en": "le" },
+                    { "ml": "ലേ", "en": "lee" },
+                    { "ml": "ലൈ", "en": "lai" },
+                    { "ml": "ലൊ", "en": "lo" },
+                    { "ml": "ലോ", "en": "loo" },
+                    { "ml": "ലൗ", "en": "lau" },
+                    { "ml": "ലം", "en": "lam" },
+                    { "ml": "ലഃ", "en": "lah" }
+                ],
+                "examples": [
+                    { "en": "latha", "ml": "ലത", "en-meaning": "Creeper" }
+                ]
+            },
+            {
+                "ml": "വ",
+                "en": "va",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "വാ", "en": "vaa" },
+                    { "ml": "വി", "en": "vi" },
+                    { "ml": "വീ", "en": "vii" },
+                    { "ml": "വു", "en": "vu" },
+                    { "ml": "വൂ", "en": "vuu" },
+                    { "ml": "വൃ", "en": "vru" },
+                    { "ml": "വെ", "en": "ve" },
+                    { "ml": "വേ", "en": "vee" },
+                    { "ml": "വൈ", "en": "vai" },
+                    { "ml": "വൊ", "en": "vo" },
+                    { "ml": "വോ", "en": "voo" },
+                    { "ml": "വൗ", "en": "vau" },
+                    { "ml": "വം", "en": "vam" },
+                    { "ml": "വഃ", "en": "vah" }
+                ],
+                "examples": [
+                    { "en": "vayu", "ml": "വായു", "en-meaning": "Wind" }
+                ]
+            },
+            {
+                "ml": "ശ",
+                "en": "śa",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "ശാ", "en": "śaa" },
+                    { "ml": "ശി", "en": "śi" },
+                    { "ml": "ശീ", "en": "śii" },
+                    { "ml": "ശു", "en": "śu" },
+                    { "ml": "ശൂ", "en": "śuu" },
+                    { "ml": "ശൃ", "en": "śru" },
+                    { "ml": "ശെ", "en": "śe" },
+                    { "ml": "ശേ", "en": "śee" },
+                    { "ml": "ശൈ", "en": "śai" },
+                    { "ml": "ശൊ", "en": "śo" },
+                    { "ml": "ശോ", "en": "śoo" },
+                    { "ml": "ശൗ", "en": "śau" },
+                    { "ml": "ശം", "en": "śam" },
+                    { "ml": "ശഃ", "en": "śah" }
+                ],
+                "examples": [
+                    { "en": "śakti", "ml": "ശക്തി", "en-meaning": "Power" }
+                ]
+            },
+            {
+                "ml": "ഷ",
+                "en": "ṣa",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "ഷാ", "en": "ṣaa" },
+                    { "ml": "ഷി", "en": "ṣi" },
+                    { "ml": "ഷീ", "en": "ṣii" },
+                    { "ml": "ഷു", "en": "ṣu" },
+                    { "ml": "ഷൂ", "en": "ṣuu" },
+                    { "ml": "ഷൃ", "en": "ṣru" },
+                    { "ml": "ഷെ", "en": "ṣe" },
+                    { "ml": "ഷേ", "en": "ṣee" },
+                    { "ml": "ഷൈ", "en": "ṣai" },
+                    { "ml": "ഷൊ", "en": "ṣo" },
+                    { "ml": "ഷോ", "en": "ṣoo" },
+                    { "ml": "ഷൗ", "en": "ṣau" },
+                    { "ml": "ഷം", "en": "ṣam" },
+                    { "ml": "ഷഃ", "en": "ṣah" }
+                ],
+                "examples": [
+                    { "en": "ṣaṣ", "ml": "ഷഷ്", "en-meaning": "Six" }
+                ]
+            },
+            {
+                "ml": "സ",
+                "en": "sa",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "സാ", "en": "saa" },
+                    { "ml": "സി", "en": "si" },
+                    { "ml": "സീ", "en": "sii" },
+                    { "ml": "സു", "en": "su" },
+                    { "ml": "സൂ", "en": "suu" },
+                    { "ml": "സൃ", "en": "sru" },
+                    { "ml": "സെ", "en": "se" },
+                    { "ml": "സേ", "en": "see" },
+                    { "ml": "സൈ", "en": "sai" },
+                    { "ml": "സൊ", "en": "so" },
+                    { "ml": "സോ", "en": "soo" },
+                    { "ml": "സൗ", "en": "sau" },
+                    { "ml": "സം", "en": "sam" },
+                    { "ml": "സഃ", "en": "sah" }
+                ],
+                "examples": [
+                    { "en": "surya", "ml": "സൂര്യ", "en-meaning": "Sun" }
+                ]
+            },
+            {
+                "ml": "ഹ",
+                "en": "ha",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "ഹാ", "en": "haa" },
+                    { "ml": "ഹി", "en": "hi" },
+                    { "ml": "ഹീ", "en": "hii" },
+                    { "ml": "ഹു", "en": "hu" },
+                    { "ml": "ഹൂ", "en": "huu" },
+                    { "ml": "ഹൃ", "en": "hru" },
+                    { "ml": "ഹെ", "en": "he" },
+                    { "ml": "ഹേ", "en": "hee" },
+                    { "ml": "ഹൈ", "en": "hai" },
+                    { "ml": "ഹൊ", "en": "ho" },
+                    { "ml": "ഹോ", "en": "hoo" },
+                    { "ml": "ഹൗ", "en": "hau" },
+                    { "ml": "ഹം", "en": "ham" },
+                    { "ml": "ഹഃ", "en": "hah" }
+                ],
+                "examples": [
+                    { "en": "hansa", "ml": "ഹംസ", "en-meaning": "Swan" }
+                ]
+            },
+            {
+                "ml": "ള",
+                "en": "ḷa",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "ളാ", "en": "ḷaa" },
+                    { "ml": "ളി", "en": "ḷi" },
+                    { "ml": "ളീ", "en": "ḷii" },
+                    { "ml": "ളു", "en": "ḷu" },
+                    { "ml": "ളൂ", "en": "ḷuu" },
+                    { "ml": "ളൃ", "en": "ḷru" },
+                    { "ml": "ളെ", "en": "ḷe" },
+                    { "ml": "ളേ", "en": "ḷee" },
+                    { "ml": "ളൈ", "en": "ḷai" },
+                    { "ml": "ളൊ", "en": "ḷo" },
+                    { "ml": "ളോ", "en": "ḷoo" },
+                    { "ml": "ളൗ", "en": "ḷau" },
+                    { "ml": "ളം", "en": "ḷam" },
+                    { "ml": "ളഃ", "en": "ḷah" }
+                ],
+                "examples": [
+                    { "en": "ḷaksha", "ml": "ളക്ഷ", "en-meaning": "Target" }
+                ]
+            },
+            {
+                "ml": "ഴ",
+                "en": "ḻa",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "ഴാ", "en": "ḻaa" },
+                    { "ml": "ഴി", "en": "ḻi" },
+                    { "ml": "ഴീ", "en": "ḻii" },
+                    { "ml": "ഴു", "en": "ḻu" },
+                    { "ml": "ഴൂ", "en": "ḻuu" },
+                    { "ml": "ഴൃ", "en": "ḻru" },
+                    { "ml": "ഴെ", "en": "ḻe" },
+                    { "ml": "ഴേ", "en": "ḻee" },
+                    { "ml": "ഴൈ", "en": "ḻai" },
+                    { "ml": "ഴൊ", "en": "ḻo" },
+                    { "ml": "ഴോ", "en": "ḻoo" },
+                    { "ml": "ഴൗ", "en": "ḻau" },
+                    { "ml": "ഴം", "en": "ḻam" },
+                    { "ml": "ഴഃ", "en": "ḻah" }
+                ],
+                "examples": [
+                    { "en": "ḻala", "ml": "ഴല", "en-meaning": "Wave" }
+                ]
+            },
+            {
+                "ml": "റ",
+                "en": "ṟa",
+                "group": "Consonants",
+                "subgroup": "Others",
+                "dependants": [
+                    { "ml": "റാ", "en": "ṟaa" },
+                    { "ml": "റി", "en": "ṟi" },
+                    { "ml": "റീ", "en": "ṟii" },
+                    { "ml": "റു", "en": "ṟu" },
+                    { "ml": "റൂ", "en": "ṟuu" },
+                    { "ml": "റൃ", "en": "ṟru" },
+                    { "ml": "റെ", "en": "ṟe" },
+                    { "ml": "റേ", "en": "ṟee" },
+                    { "ml": "റൈ", "en": "ṟai" },
+                    { "ml": "റൊ", "en": "ṟo" },
+                    { "ml": "റോ", "en": "ṟoo" },
+                    { "ml": "റൗ", "en": "ṟau" },
+                    { "ml": "റം", "en": "ṟam" },
+                    { "ml": "റഃ", "en": "ṟah" }
+                ],
+                "examples": [
+                    { "en": "ṟaṟa", "ml": "ററ", "en-meaning": "Quick" }
+                ]
+            },
+            {
+                "ml": "ൽ",
+                "en": "l",
+                "group": "Chillus",
+                "dependants": [],
+                "examples": [
+                    { "en": "nil", "ml": "നിൽ", "en-meaning": "Stand" }
+                ]
+            },
+            {
+                "ml": "ൾ",
+                "en": "ḷ",
+                "group": "Chillus",
+                "dependants": [],
+                "examples": [
+                    { "en": "kaḷ", "ml": "കൾ", "en-meaning": "Times" }
+                ]
+            },
+            {
+                "ml": "ൻ",
+                "en": "n",
+                "group": "Chillus",
+                "dependants": [],
+                "examples": [
+                    { "en": "man", "ml": "മൻ", "en-meaning": "Pride" }
+                ]
+            },
+            {
+                "ml": "ർ",
+                "en": "r",
+                "group": "Chillus",
+                "dependants": [],
+                "examples": [
+                    { "en": "par", "ml": "പർ", "en-meaning": "Leaf" }
+                ]
+            },
+            {
+                "ml": "ൺ",
+                "en": "n",
+                "group": "Chillus",
+                "dependants": [],
+                "examples": [
+                    { "en": "kaṇ", "ml": "കൺ", "en-meaning": "Eye" }
+                ]
+            },
+            {
+                "ml": "ക്ക",
+                "en": "kka",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "ക്കാ", "en": "kkaa" },
+                    { "ml": "ക്കി", "en": "kki" },
+                    { "ml": "ക്കീ", "en": "kkii" },
+                    { "ml": "ക്കു", "en": "kku" },
+                    { "ml": "ക്കൂ", "en": "kkuu" },
+                    { "ml": "ക്കെ", "en": "kke" },
+                    { "ml": "ക്കേ", "en": "kkee" },
+                    { "ml": "ക്കൈ", "en": "kkai" },
+                    { "ml": "ക്കൊ", "en": "kko" },
+                    { "ml": "ക്കോ", "en": "kkoo" },
+                    { "ml": "ക്കൗ", "en": "kkau" },
+                    { "ml": "ക്കം", "en": "kkam" },
+                    { "ml": "ക്കഃ", "en": "kkah" }
+                ],
+                "examples": [
+                    { "en": "pakka", "ml": "പക്ക", "en-meaning": "Solid" }
+                ]
+            },
+            {
+                "ml": "മ്മ",
+                "en": "mma",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "മ്മാ", "en": "mmaa" },
+                    { "ml": "മ്മി", "en": "mmi" },
+                    { "ml": "മ്മീ", "en": "mmii" },
+                    { "ml": "മ്മു", "en": "mmu" },
+                    { "ml": "മ്മൂ", "en": "mmuu" },
+                    { "ml": "മ്മെ", "en": "mme" },
+                    { "ml": "മ്മേ", "en": "mmee" },
+                    { "ml": "മ്മൈ", "en": "mmai" },
+                    { "ml": "മ്മൊ", "en": "mmo" },
+                    { "ml": "മ്മോ", "en": "mmoo" },
+                    { "ml": "മ്മൗ", "en": "mmau" },
+                    { "ml": "മ്മം", "en": "mmam" },
+                    { "ml": "മ്മഃ", "en": "mmah" }
+                ],
+                "examples": [
+                    { "en": "sammanam", "ml": "സമ്മാനം", "en-meaning": "Gift" }
+                ]
+            },
+            {
+                "ml": "ത്ത",
+                "en": "tta",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "ത്താ", "en": "ttaa" },
+                    { "ml": "ത്തി", "en": "tti" },
+                    { "ml": "ത്തീ", "en": "ttii" },
+                    { "ml": "ത്തു", "en": "ttu" },
+                    { "ml": "ത്തൂ", "en": "ttuu" },
+                    { "ml": "ത്തെ", "en": "tte" },
+                    { "ml": "ത്തേ", "en": "ttee" },
+                    { "ml": "ത്തൈ", "en": "ttai" },
+                    { "ml": "ത്തൊ", "en": "tto" },
+                    { "ml": "ത്തോ", "en": "ttoo" },
+                    { "ml": "ത്തൗ", "en": "ttau" },
+                    { "ml": "ത്തം", "en": "ttam" },
+                    { "ml": "ത്തഃ", "en": "ttah" }
+                ],
+                "examples": [
+                    { "en": "sathyam", "ml": "സത്യo", "en-meaning": "Truth" }
+                ]
+            },
+            {
+                "ml": "ന്ന",
+                "en": "nna",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "ന്നാ", "en": "nnaa" },
+                    { "ml": "ന്നി", "en": "nni" },
+                    { "ml": "ന്നീ", "en": "nnii" },
+                    { "ml": "ന്നു", "en": "nnu" },
+                    { "ml": "ന്നൂ", "en": "nnuu" },
+                    { "ml": "ന്നെ", "en": "nne" },
+                    { "ml": "ന്നേ", "en": "nnee" },
+                    { "ml": "ന്നൈ", "en": "nnai" },
+                    { "ml": "ന്നൊ", "en": "nno" },
+                    { "ml": "ന്നോ", "en": "nnoo" },
+                    { "ml": "ന്നൗ", "en": "nnau" },
+                    { "ml": "ന്നം", "en": "nnam" },
+                    { "ml": "ന്നഃ", "en": "nnah" }
+                ],
+                "examples": [
+                    { "en": "pinna", "ml": "പിന്ന", "en-meaning": "Later" }
+                ]
+            },
+            {
+                "ml": "പ്പ",
+                "en": "ppa",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "പ്പാ", "en": "ppaa" },
+                    { "ml": "പ്പി", "en": "ppi" },
+                    { "ml": "പ്പീ", "en": "ppii" },
+                    { "ml": "പ്പു", "en": "ppu" },
+                    { "ml": "പ്പൂ", "en": "ppuu" },
+                    { "ml": "പ്പെ", "en": "ppe" },
+                    { "ml": "പ്പേ", "en": "ppee" },
+                    { "ml": "പ്പൈ", "en": "ppai" },
+                    { "ml": "പ്പൊ", "en": "ppo" },
+                    { "ml": "പ്പോ", "en": "ppoo" },
+                    { "ml": "പ്പൗ", "en": "ppau" },
+                    { "ml": "പ്പം", "en": "ppam" },
+                    { "ml": "പ്പഃ", "en": "ppah" }
+                ],
+                "examples": [
+                    { "en": "appam", "ml": "അപ്പം", "en-meaning": "Rice cake" }
+                ]
+            },
+            {
+                "ml": "ല്ല",
+                "en": "lla",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "ല്ലാ", "en": "llaa" },
+                    { "ml": "ല്ലി", "en": "lli" },
+                    { "ml": "ല്ലീ", "en": "llii" },
+                    { "ml": "ല്ലു", "en": "llu" },
+                    { "ml": "ല്ലൂ", "en": "lluu" },
+                    { "ml": "ല്ലൃ", "en": "llru" },
+                    { "ml": "ല്ലെ", "en": "lle" },
+                    { "ml": "ല്ലേ", "en": "llee" },
+                    { "ml": "ല്ലൈ", "en": "llai" },
+                    { "ml": "ല്ലൊ", "en": "llo" },
+                    { "ml": "ല്ലോ", "en": "lloo" },
+                    { "ml": "ല്ലൗ", "en": "llau" },
+                    { "ml": "ല്ലം", "en": "llam" },
+                    { "ml": "ല്ലഃ", "en": "llah" }
+                ],
+                "examples": [
+                    { "en": "vallam", "ml": "വള്ളം", "en-meaning": "Boat" }
+                ]
+            },
+            {
+                "ml": "ട്ട",
+                "en": "ṭṭa",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "ട്ടാ", "en": "ṭṭaa" },
+                    { "ml": "ട്ടി", "en": "ṭṭi" },
+                    { "ml": "ട്ടീ", "en": "ṭṭii" },
+                    { "ml": "ട്ടു", "en": "ṭṭu" },
+                    { "ml": "ട്ടൂ", "en": "ṭṭuu" },
+                    { "ml": "ട്ടെ", "en": "ṭṭe" },
+                    { "ml": "ട്ടേ", "en": "ṭṭee" },
+                    { "ml": "ട്ടൈ", "en": "ṭṭai" },
+                    { "ml": "ട്ടൊ", "en": "ṭṭo" },
+                    { "ml": "ട്ടോ", "en": "ṭṭoo" },
+                    { "ml": "ട്ടൗ", "en": "ṭṭau" },
+                    { "ml": "ട്ടം", "en": "ṭṭam" },
+                    { "ml": "ട്ടഃ", "en": "ṭṭah" }
+                ],
+                "examples": [
+                    { "en": "kotta", "ml": "കോട്ട", "en-meaning": "Fort" }
+                ]
+            },
+            {
+                "ml": "ച്ച",
+                "en": "cca",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "ച്ചാ", "en": "ccaa" },
+                    { "ml": "ച്ചി", "en": "cci" },
+                    { "ml": "ച്ചീ", "en": "ccii" },
+                    { "ml": "ച്ചു", "en": "ccu" },
+                    { "ml": "ച്ചൂ", "en": "ccuu" },
+                    { "ml": "ച്ചെ", "en": "cce" },
+                    { "ml": "ച്ചേ", "en": "ccee" },
+                    { "ml": "ച്ചൈ", "en": "ccai" },
+                    { "ml": "ച്ചൊ", "en": "cco" },
+                    { "ml": "ച്ചോ", "en": "ccoo" },
+                    { "ml": "ച്ചൗ", "en": "ccau" },
+                    { "ml": "ച്ചം", "en": "ccam" },
+                    { "ml": "ച്ചഃ", "en": "ccah" }
+                ],
+                "examples": [
+                    { "en": "vicharam", "ml": "വിചാരം", "en-meaning": "Thought" }
+                ]
+            },
+            {
+                "ml": "ണ്ണ",
+                "en": "ṇṇa",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "ണ്ണാ", "en": "ṇṇaa" },
+                    { "ml": "ണ്ണി", "en": "ṇṇi" },
+                    { "ml": "ണ്ണീ", "en": "ṇṇii" },
+                    { "ml": "ണ്ണു", "en": "ṇṇu" },
+                    { "ml": "ണ്ണൂ", "en": "ṇṇuu" },
+                    { "ml": "ണ്ണെ", "en": "ṇṇe" },
+                    { "ml": "ണ്ണേ", "en": "ṇṇee" },
+                    { "ml": "ണ്ണൈ", "en": "ṇṇai" },
+                    { "ml": "ണ്ണൊ", "en": "ṇṇo" },
+                    { "ml": "ണ്ണോ", "en": "ṇṇoo" },
+                    { "ml": "ണ്ണൗ", "en": "ṇṇau" },
+                    { "ml": "ണ്ണം", "en": "ṇṇam" },
+                    { "ml": "ണ്ണഃ", "en": "ṇṇah" }
+                ],
+                "examples": [
+                    { "en": "panna", "ml": "പണ്ണ", "en-meaning": "Ornament" }
+                ]
+            },
+            {
+                "ml": "ക്ഷ",
+                "en": "ksha",
+                "group": "Double Letters",
+                "dependants": [
+                    { "ml": "ക്ഷാ", "en": "kshaa" },
+                    { "ml": "ക്ഷി", "en": "kshi" },
+                    { "ml": "ക്ഷീ", "en": "kshii" },
+                    { "ml": "ക്ഷു", "en": "kshu" },
+                    { "ml": "ക്ഷൂ", "en": "kshuu" },
+                    { "ml": "ക്ഷെ", "en": "kshe" },
+                    { "ml": "ക്ഷേ", "en": "kshee" },
+                    { "ml": "ക്ഷൈ", "en": "kshai" },
+                    { "ml": "ക്ഷൊ", "en": "ksho" },
+                    { "ml": "ക്ഷോ", "en": "kshoo" },
+                    { "ml": "ക്ഷൗ", "en": "kshau" },
+                    { "ml": "ക്ഷം", "en": "ksham" },
+                    { "ml": "ക്ഷഃ", "en": "kshah" }
+                ],
+                "examples": [
+                    { "en": "kshama", "ml": "ക്ഷമ", "en-meaning": "Forgiveness" }
+                ]
+            }
+        ];
+
+        function loadCategories() {
+            const categorySelect = document.getElementById("categorySelect");
+            categorySelect.innerHTML = "";
+            const categories = [...new Set(letterData.map(item => item.group))];
+            categories.forEach((category, index) => {
+                const option = document.createElement("option");
+                option.value = category;
+                option.textContent = category;
+                if (index === 0) {
+                    option.selected = true;
+                }
+                categorySelect.appendChild(option);
+            });
+            loadLetters();
+        }
+
+        function loadLetters() {
+            let letterSelected = false;
+            currentCategory = document.getElementById("categorySelect").value;
+            const lettersDiv = document.getElementById("letters");
+            lettersDiv.innerHTML = "";
+            const lettersInCatagory = [];
+            letterData.forEach((letterObj, index) => {
+                if (letterObj.group === currentCategory) {
+                    lettersInCatagory.push(letterObj);
+                }
+            });
+
+            const subCategories = [...new Set(lettersInCatagory.map(item => item.subgroup))];
+
+            subCategories.forEach((subCategory, index) => {
+                let parent = lettersDiv;
+
+                if (subCategory) {
+                    parent = document.createElement("div");
+                    parent.className = "sub-group-container";
+                    parent.title = subCategory + " Letters";
+                }
+
+                lettersInCatagory.forEach((letterObj, index) => {
+                    if (letterObj.subgroup === subCategory) {
+                        const option = document.createElement("div");
+                        option.className = "letter-option";
+                        option.textContent = letterObj.ml;
+                        option.onclick = () => changeLetter(letterObj);
+                        parent.appendChild(option);
+                        if (!letterSelected) {
+                            changeLetter(letterObj)
+                            letterSelected = true;
+                        }
+                    }
+                });
+
+                if (subCategory) {
+                    lettersDiv.appendChild(parent);
+                }
+            });
+
+
+
+        }
+
+        const nextLetterButton = document.getElementById("nextLetter");
+        const nextDependantLetterButton = document.getElementById("nextDependantLetter");
+        const previousLetterButton = document.getElementById("previousLetter");
+        const previousDependantLetterButton = document.getElementById("previousDependantLetter");
+
+        function changeLetter(letterObj) {
+            currentLetter = letterObj.ml;
+            currentLetterObj = letterObj;
+
+            drawLetterTemplate(currentLetter);
+            clearCanvas();
+
+            const currentCategoryLetters = letterData.filter(item => item.group === letterObj.group);
+            const currentIndex = currentCategoryLetters.findIndex(item => item.ml === currentLetter);
+            nextLetterButton.disabled = (currentIndex >= currentCategoryLetters.length - 1);
+            previousLetterButton.disabled = (currentIndex <= 0);
+            nextDependantLetterButton.disabled = true;
+            previousDependantLetterButton.disabled = true;
+            currentDependantLetter = '';
+            currentDependantIndex = 0;
+
+            generateLetterDetails(letterObj);
+            generateDependantLetters(letterObj);
+        }
+
+        function generateLetterDetails(letterObj) {
+            let detailsHtml = `<span><b>${letterObj.ml}</b> : '${letterObj.en}'</span>`;
+
+            if (letterObj.examples) {
+                const examples = letterObj.examples
+                    .map(example => `<b>${example.ml}</b> [${example.en} - ${example["en-meaning"]}]`)
+                    .join("; ");
+
+                detailsHtml += `<span> :: ${examples}</span>`;
+            }
+            document.getElementById("letter-details").innerHTML = detailsHtml;
+        }
+
+        function generateDependantLetters(letterObj) {
+            const dependantLettersDiv = document.getElementById("dependantLetters");
+            dependantLettersDiv.innerHTML = "";
+
+            if (letterObj.dependants) {
+                letterObj.dependants.forEach((dependant, index) => {
+                    const dependantButton = document.createElement("div");
+                    dependantButton.className = "dependant-letter-option";
+                    dependantButton.textContent = dependant.ml;
+                    dependantButton.onclick = () => changeDependantLetter(dependant);
+                    dependantLettersDiv.appendChild(dependantButton);
+                });
+            }
+        }
+
+        function changeDependantLetter(dependantObj) {
+            clearCanvas();
+            currentDependantLetter = dependantObj.ml;
+            drawLetterTemplate(currentDependantLetter);
+            generateLetterDetails(dependantObj);
+
+            currentDependantIndex = currentLetterObj.dependants.findIndex(dep => dep.ml === dependantObj.ml);
+            nextDependantLetterButton.disabled = (currentDependantIndex >= currentLetterObj.dependants.length - 1);
+            previousDependantLetterButton.disabled = (currentDependantIndex <= 0);
+        }
+
+        function drawLetterTemplate(letter) {
+            currentLetterInTemplate = letter;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+            ctx.font = "250px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(letter, canvas.width / 2, canvas.height / 2);
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawLetterTemplate(currentLetterInTemplate);
+        }
+
+        function learn() {
+            window.open(`https://www.google.com/search?q=${currentLetterInTemplate}`, '_blank');
+        }
+
+        function nextLetter() {
+            const currentCategoryLetters = letterData.filter(item => item.group === currentCategory);
+            const currentIndex = currentCategoryLetters.findIndex(item => item.ml === currentLetter);
+
+            if (currentIndex < currentCategoryLetters.length - 1) {
+                const newLetter = currentCategoryLetters[currentIndex + 1];
+                changeLetter(newLetter);
+            }
+        }
+
+        function previousLetter() {
+            const currentCategoryLetters = letterData.filter(item => item.group === currentCategory);
+            const currentIndex = currentCategoryLetters.findIndex(item => item.ml === currentLetter);
+
+            if (currentIndex > 0) {
+                const newLetter = currentCategoryLetters[currentIndex - 1];
+                changeLetter(newLetter);
+            }
+        }
+
+        function nextDependantLetter() {
+            if (currentLetterObj && currentLetterObj.dependants) {
+                const nextIndex = currentDependantIndex + 1;
+                if (nextIndex < currentLetterObj.dependants.length) {
+                    changeDependantLetter(currentLetterObj.dependants[nextIndex]);
+                }
+            }
+        }
+
+        function previousDependantLetter() {
+            if (currentLetterObj && currentLetterObj.dependants) {
+                const newIndex = currentDependantIndex - 1;
+                if (newIndex >= 0) {
+                    changeDependantLetter(currentLetterObj.dependants[newIndex]);
+                }
+            }
+        }
+
+        // Tracing
+        function drawLine(x, y) {
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = '#FF6347';
+            ctx.lineWidth = 10;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            lastX = x;
+            lastY = y;
+        }
+
+        // Mouse drawing events
+        let lastX = 0;
+        let lastY = 0;
+
+        canvas.addEventListener('mousedown', function (e) {
+            drawing = true;
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+        });
+
+        canvas.addEventListener('mousemove', function (e) {
+            if (!drawing) return;
+            drawLine(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('mouseup', function () {
+            drawing = false;
+        });
+
+        canvas.addEventListener('mouseout', function () {
+            drawing = false;
+        });
+
+        // Touch drawing events
+        canvas.addEventListener('touchstart', function (e) {
+            e.preventDefault();
+            drawing = true;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            lastX = touch.clientX - rect.left;
+            lastY = touch.clientY - rect.top;
+        });
+
+        canvas.addEventListener('touchmove', function (e) {
+            e.preventDefault();
+            if (!drawing) return;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            drawLine(touch.clientX - rect.left, touch.clientY - rect.top);
+        });
+
+        canvas.addEventListener('touchend', function () {
+            drawing = false;
+        });
+
+        const container = document.getElementById("container");
+        const fullscreenButton = document.getElementById("fullscreen");
+
+        fullscreenButton.addEventListener("click", () => {
+            if (!document.fullscreenElement) {
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        function download() {
+            const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
+            canvas.toBlob(function (blob) {
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `letter_${currentLetterInTemplate}_${timestamp}.png`;
+                link.click();
+            }, "image/png");
+        }
+
+        window.onload = loadCategories;
+    </script>
+</body>
+
+</html>

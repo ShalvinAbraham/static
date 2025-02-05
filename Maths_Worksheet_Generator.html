@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.25">
+    <title>Math Worksheet Generator - Addition / Subtraction</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            margin: 20px;
+        }
+
+        .form-container {
+            font-family: Arial;
+            margin-bottom: 20px;
+        }
+
+        .question {
+            margin: 5px 15px;
+            font-size: 20px;
+            line-height: 1.2;
+            display: inline-block;
+            border: 3px solid blue;
+            padding: 5px 15px;
+            font-weight: bold;
+        }
+
+        .question span.num {
+            display: inline-block;
+            width: 100px;
+            font-size: 50px;
+            text-align: right;
+            margin-left: 10px;
+        }
+
+        .question label.op {
+            width: 20px;
+            font-size: 30px;
+            text-align: left;
+            margin-left: 10px;
+            color: violet;
+        }
+
+        .question span.num1 {
+            color: green;
+        }
+
+        .question span.num2 {
+            color: red;
+        }
+
+        .question span.num3 {
+            color: #d52168;
+        }
+
+        .question hr {
+            margin: 5px 0;
+            border: none;
+            border-top: 3px solid blue;
+            width: 150px;
+        }
+
+        .answer {
+            margin: 15px;
+            width: 100px;
+            font-size: 20px;
+            line-height: 1.2;
+            display: inline-block;
+        }
+
+        button,
+        input,
+        select {
+            margin: 5px;
+            padding: 5px;
+        }
+
+        @media print {
+            .form-container {
+                display: none;
+            }
+
+            #answers,
+            #practice {
+                page-break-before: always;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-container">
+        <label>
+            Generate
+            <select type="number" id="numQuestions">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </label>
+        <select id="operation">
+            <option value="+">Addition</option>
+            <option value="-">Subtraction</option>
+            <option value="+-" selected>Addition / Subtraction</option>
+        </select>
+        <label>
+            Questions for Numbers Between
+            <select type="number" id="startNumber">
+                <option value="0">0</option>
+                <option value="1" selected>1</option>
+                <option value="10">10</option>
+                <option value="100">100</option>
+                <option value="-10">-10</option>
+                <option value="-100">-100</option>
+            </select>
+            AND
+            <select type="number" id="endNumber">
+                <option value="9">9</option>
+                <option value="19" selected>19</option>
+                <option value="99">99</option>
+                <option value="999">999</option>
+                <option value="0">0</option>
+                <option value="-1">-1</option>
+            </select>
+        </label>
+
+        <label>
+            with <input type="checkbox" checked id="generateAnswers"> <b>Answers</b>
+        </label>
+
+        <label>
+            and <input type="checkbox" checked id="generatePractice"> <b>Practice Page</b>
+        </label>
+
+        <br />
+
+        <button onclick="clean();">Clear</button>
+        <button onclick="generate()">Generate</button>
+        <button onclick="print_me()">Print</button>
+    </div>
+
+    <div id="worksheet"></div>
+    <div id="answers"></div>
+    <div id="practice"></div>
+
+    <script>
+        let questions = [];
+        const worksheet = document.getElementById('worksheet');
+        const answers = document.getElementById('answers');
+        const practice = document.getElementById('practice');
+
+        function clean() {
+            worksheet.innerHTML = '';
+            answers.innerHTML = '';
+            practice.innerHTML = '';
+            questions = [];
+        }
+
+        function print_me() {
+            const cur_title = document.title;
+
+            const now = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15).replace('T', '_');
+			document.title = `Worksheet_${now}`;
+
+            answers.style.display = document.getElementById("generateAnswers").checked ? 'inherit' : 'none'
+            practice.style.display = document.getElementById("generatePractice").checked ? 'inherit' : 'none'
+
+            window.print();
+
+            document.title = cur_title;
+        }
+
+        function generate() {
+            const startNumber = parseInt(document.getElementById('startNumber').value);
+            const endNumber = parseInt(document.getElementById('endNumber').value);
+            const operation = document.getElementById('operation').value;
+            const numQuestions = parseInt(document.getElementById('numQuestions').value);
+
+            const generateAnswers = document.getElementById("generateAnswers").checked;
+            const generatePractice = document.getElementById("generatePractice").checked;
+
+            worksheet.innerHTML = '';
+            answers.innerHTML = '';
+
+            for (let i = 0; i < numQuestions; i++) {
+                let num1 = getRandomNumber(startNumber, endNumber);
+                let num2 = getRandomNumber(startNumber, endNumber);
+                let op = operation;
+
+                if (operation === '+-') {
+                    op = Math.random() > 0.5 ? '+' : '-';
+                }
+
+                if (op === '-' && num2 > num1) {
+                    [num1, num2] = [num2, num1];
+                }
+
+                let ans = op === '+' ? num1 + num2 : num1 - num2;
+
+                questions.push({ num1, num2, op, ans });
+            }
+
+            questions.forEach(({ num1, num2, op, ans }, index) => {
+                const qdiv = document.createElement('div');
+                qdiv.className = 'question';
+                qdiv.innerHTML = `
+                    <div>${index + 1}.<br />
+						 <label class='op'>&nbsp;</label>
+						 <span class='num num1'>${num1}</span><br />
+						 <label class='op'>${op}</label>
+						 <span class='num num2'>${num2}</span>
+						 <hr>
+						 <label class='op'>&nbsp;</label>
+						 <span class='num num3'>&nbsp;</span>
+						 <br />
+                    </div>
+                `;
+                worksheet.appendChild(qdiv);
+
+                if (generateAnswers) {
+                    const adiv = document.createElement('div');
+                    adiv.className = 'answer';
+                    adiv.innerHTML = `<label>${index + 1}. <b>${ans}</b></label>`;
+                    answers.appendChild(adiv);
+                }
+
+                if (generatePractice) {
+                    const pdiv = document.createElement('div');
+                    pdiv.className = 'question';
+                    pdiv.innerHTML = `
+                    <div>${index + 1}.<br />
+						 <label class='op'>&nbsp;</label>
+						 <span class='num num1'>${num1}</span><br />
+						 <label class='op'>${op}</label>
+						 <span class='num num2'>${num2}</span>
+						 <hr>
+						 <label class='op'>=</label>
+						 <span class='num num3'>${ans}</span>
+						 <br />
+                    </div>
+                `;
+                    practice.appendChild(pdiv);
+                }
+            });
+        }
+
+        function getRandomNumber(min, max) {
+            return Math.floor(Math.random() * Math.abs(max - min + 1)) + min;
+        }
+    </script>
+</body>
+
+</html>
