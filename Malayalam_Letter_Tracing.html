@@ -31,6 +31,10 @@
             margin-top: 20px;
         }
 
+        .top {
+            height: 175px;
+        }
+
         .header {
             margin: 20px;
             margin-bottom: 0px;
@@ -181,21 +185,24 @@
 
 <body>
     <div id="container">
-        <div class="font-preload">മലയാളം</div>
-        <div class="header">
-            <select id="categorySelect" class="categorySelect" title="Choose a letter category"
-                onchange="loadLetters()"></select>
-            <div id="letter-details" class="letterDetails"> </div>
-            <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
+        <div class="top">
+            <div class="font-preload">മലയാളം</div>
+            <div class="header">
+                <select id="categorySelect" class="categorySelect" title="Choose a letter category"
+                    onchange="loadLetters()"></select>
+                <div id="letter-details" class="letterDetails"> </div>
+                <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
+            </div>
+
+            <div class="letter-select-container" id="letters"></div>
+            <div class="dependant-letter-container" id="dependantLetters"></div>
         </div>
-
-        <div class="letter-select-container" id="letters"></div>
-        <div class="dependant-letter-container" id="dependantLetters"></div>
-
         <canvas id="tracingCanvas" width="800" height="400"></canvas>
         <div class="controls">
+            <button id="previousCategory" class="material-symbols-outlined" title="Previous letter category"
+                onclick="previousCategory()">skip_previous</button>
             <button class="material-symbols-outlined" id="previousLetter" title="Previous letter"
-                onclick="previousLetter()">skip_previous</button>
+                onclick="previousLetter()">keyboard_tab_rtl</button>
             <button class="material-symbols-outlined" id="previousDependantLetter" title="Previous dependant letter"
                 onclick="previousDependantLetter()">arrow_back</button>
             <div class="font-toggle" title="Writing Direction">
@@ -208,7 +215,9 @@
             <button id="nextDependantLetter" class="material-symbols-outlined" title="Next dependant letter"
                 onclick="nextDependantLetter()">arrow_forward</button>
             <button id="nextLetter" class="material-symbols-outlined" title="Next letter"
-                onclick="nextLetter()">skip_next</button>
+                onclick="nextLetter()">keyboard_tab</button>
+            <button id="nextCategory" class="material-symbols-outlined" title="Next letter category"
+                onclick="nextCategory()">skip_next</button>
         </div>
     </div>
 
@@ -1532,8 +1541,9 @@
             }
         ];
 
+        const categorySelect = document.getElementById("categorySelect");
+
         function loadCategories() {
-            const categorySelect = document.getElementById("categorySelect");
             categorySelect.innerHTML = "";
             const categories = [...new Set(letterData.map(item => item.group))];
             categories.forEach((category, index) => {
@@ -1550,7 +1560,7 @@
 
         function loadLetters() {
             let letterSelected = false;
-            currentCategory = document.getElementById("categorySelect").value;
+            currentCategory = categorySelect.value;
             const lettersDiv = document.getElementById("letters");
             lettersDiv.innerHTML = "";
             const lettersInCatagory = [];
@@ -1614,9 +1624,7 @@
             currentDependantIndex = -1;
 
             generateLetterDetails(letterObj);
-            if (letterObj.dependants) {
-                generateDependantLetters(letterObj);
-            }
+            generateDependantLetters(letterObj);
         }
 
         function generateLetterDetails(letterObj) {
@@ -1636,7 +1644,7 @@
             const dependantLettersDiv = document.getElementById("dependantLetters");
             dependantLettersDiv.innerHTML = "";
 
-            letterObj.dependants.forEach((dependant, index) => {
+            letterObj.dependants?.forEach((dependant, index) => {
                 const dependantButton = document.createElement("div");
                 dependantButton.className = "dependant-letter-option";
                 dependantButton.textContent = dependant.ml;
@@ -1661,18 +1669,46 @@
             clearCanvas();
         });
 
+        function highlightLetter(letter) {
+            const letterDivs = document.querySelectorAll('.letter-option');
+            const depLetterDivs = document.querySelectorAll('.dependant-letter-option');
+
+            letterDivs.forEach(letterDiv => {
+                if (letterDiv.textContent === letter) {
+                    letterDiv.style.backgroundColor = '#ff6347';
+                    letterDiv.style.color = "white";
+                } else {
+                    letterDiv.style.backgroundColor = '#ffebcd';
+                    letterDiv.style.color = "black";
+                }
+            });
+
+            depLetterDivs.forEach(letterDiv => {
+                if (letterDiv.textContent === letter) {
+                    letterDiv.style.backgroundColor = '#ff6347';
+                    letterDiv.style.color = "white";
+                } else {
+                    letterDiv.style.backgroundColor = 'aquamarine';
+                    letterDiv.style.color = "black";
+                }
+            });
+        }
+
         function drawLetterTemplate(letter) {
             currentLetterInTemplate = letter;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
             if (fontToggle.checked) {
+                ctx.font = "75px Arial";
+                ctx.fillText(letter, canvas.width - 150, 50);
                 ctx.font = "250px 'Nupuram Arrows'";
             } else {
                 ctx.font = "250px Arial";
             }
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
             ctx.fillText(letter, canvas.width / 2, canvas.height / 2);
+            highlightLetter(letter);
         }
 
         function clearCanvas() {
@@ -1720,6 +1756,30 @@
                     changeDependantLetter(currentLetterObj.dependants[newIndex]);
                 }
             }
+        }
+
+        function nextCategory() {
+            var selectedIndex = categorySelect.selectedIndex;
+
+            if (selectedIndex < categorySelect.options.length - 1) {
+                categorySelect.selectedIndex = selectedIndex + 1;
+            } else {
+                categorySelect.selectedIndex = 0;
+            }
+
+            loadLetters();
+        }
+
+        function previousCategory() {
+            var selectedIndex = categorySelect.selectedIndex;
+
+            if (selectedIndex > 0) {
+                categorySelect.selectedIndex = selectedIndex - 1;
+            } else {
+                categorySelect.selectedIndex = categorySelect.options.length - 1;
+            }
+
+            loadLetters();
         }
 
         // Tracing
