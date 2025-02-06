@@ -79,7 +79,7 @@
         }
 
         .controls>button,
-        .writing-direction>label {
+        .checkbox-div>label {
             background-color: #ff6347;
             color: white;
             font-size: 18px;
@@ -97,11 +97,12 @@
             background-color: #cccccc;
         }
 
-        #writingDirection {
+        .checkbox-div>input {
             display: none;
         }
 
-        #writingDirection:checked+label {
+        #writingDirection:checked+label,
+        #showLetterDisplay:checked+label {
             background-color: #b36301;
         }
 
@@ -185,7 +186,7 @@
 
 <body>
     <div id="container">
-        <div class="top">
+        <div id="top" class="top">
             <div class="font-preload">മലയാളം</div>
             <div class="header">
                 <select id="categorySelect" class="categorySelect" title="Choose a letter category"
@@ -194,8 +195,10 @@
                 <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
             </div>
 
-            <div class="letter-select-container" id="letters"></div>
-            <div class="dependant-letter-container" id="dependantLetters"></div>
+            <div id="letterDisplay">
+                <div class="letter-select-container" id="letters"></div>
+                <div class="dependant-letter-container" id="dependantLetters"></div>
+            </div>
         </div>
         <canvas id="tracingCanvas" width="800" height="400"></canvas>
         <div class="controls">
@@ -205,13 +208,18 @@
                 onclick="previousLetter()">keyboard_tab_rtl</button>
             <button class="material-symbols-outlined" id="previousDependantLetter" title="Previous dependant letter"
                 onclick="previousDependantLetter()">arrow_back</button>
-            <div class="writing-direction" title="Writing Direction">
+            <div class="checkbox-div" title="Toggle letter display">
+                <input type="checkbox" id="showLetterDisplay" checked>
+                <label class="material-symbols-outlined" for="showLetterDisplay">keyboard</label>
+            </div>
+            <div class="checkbox-div" title="Writing Direction">
                 <input type="checkbox" id="writingDirection" checked>
-                <label class="material-symbols-outlined" for="writingDirection">switch_access_shortcut</label>
+                <label class="material-symbols-outlined" for="writingDirection">near_me</label>
             </div>
             <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
             <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
             <button class="material-symbols-outlined" title="Learn more" onclick="learn()">contact_support</button>
+            <button class="material-symbols-outlined" title="Random Letter" onclick="randomLetter()">shuffle</button>
             <button id="nextDependantLetter" class="material-symbols-outlined" title="Next dependant letter"
                 onclick="nextDependantLetter()">arrow_forward</button>
             <button id="nextLetter" class="material-symbols-outlined" title="Next letter"
@@ -232,7 +240,7 @@
         let currentLetterObj = null;
         let currentLetterInTemplate = "";
 
-        const letterData = [
+        const data = [
             {
                 "ml": "അ",
                 "en": "a",
@@ -1541,6 +1549,8 @@
             }
         ];
 
+        const letterData = [...data, ...data.map(letter => ({ ...letter, subgroup: letter.subgroup || letter.group, group: "All Letters" }))]
+
         const categorySelect = document.getElementById("categorySelect");
 
         function loadCategories() {
@@ -1558,10 +1568,12 @@
             loadLetters();
         }
 
+        const lettersDiv = document.getElementById("letters");
+
         function loadLetters() {
-            let letterSelected = false;
+            let startingLetter = null;
             currentCategory = categorySelect.value;
-            const lettersDiv = document.getElementById("letters");
+
             lettersDiv.innerHTML = "";
             const lettersInCatagory = [];
             letterData.forEach((letterObj, index) => {
@@ -1588,9 +1600,8 @@
                         option.textContent = letterObj.ml;
                         option.onclick = () => changeLetter(letterObj);
                         parent.appendChild(option);
-                        if (!letterSelected) {
-                            changeLetter(letterObj)
-                            letterSelected = true;
+                        if (!startingLetter) {
+                            startingLetter = letterObj;
                         }
                     }
                 });
@@ -1599,6 +1610,8 @@
                     lettersDiv.appendChild(parent);
                 }
             });
+
+            changeLetter(startingLetter);
         }
 
         const nextLetterButton = document.getElementById("nextLetter");
@@ -1717,7 +1730,7 @@
         }
 
         function learn() {
-            window.open(`https://www.google.com/search?q=${currentLetterInTemplate}`, '_blank');
+            window.open(`https://www.google.com/search?q="Malayalam%20Letter"%20"${currentLetterInTemplate}"`, '_blank');
         }
 
         function nextLetter() {
@@ -1738,6 +1751,13 @@
                 const newLetter = currentCategoryLetters[currentIndex - 1];
                 changeLetter(newLetter);
             }
+        }
+
+        function randomLetter() {
+            const currentCategoryLetters = letterData.filter(item => item.group === currentCategory);
+            newIndex = Math.floor(Math.random() * currentCategoryLetters.length)
+            const newLetter = currentCategoryLetters[newIndex];
+            changeLetter(newLetter);
         }
 
         function nextDependantLetter() {
@@ -1864,6 +1884,10 @@
                 link.click();
             }, "image/png");
         }
+
+        document.getElementById("showLetterDisplay").addEventListener("change", function () {
+            document.getElementById("letterDisplay").style.display = this.checked ? "block" : "none";
+        });
 
         window.onload = loadCategories;
     </script>
