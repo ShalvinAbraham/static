@@ -7,6 +7,17 @@
     <title>Malayalam Letter Tracing</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
     <style>
+        @font-face {
+            font-family: 'Nupuram Arrows';
+            src: url('fonts/NupuramArrows.woff2') format('woff2')
+        }
+
+        .font-preload {
+            position: absolute;
+            visibility: hidden;
+            font-family: 'Nupuram Arrows';
+        }
+
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -63,7 +74,8 @@
             gap: 15px;
         }
 
-        .controls>button {
+        .controls>button,
+        .font-toggle>label {
             background-color: #ff6347;
             color: white;
             font-size: 18px;
@@ -79,6 +91,14 @@
 
         .controls>button:disabled {
             background-color: #cccccc;
+        }
+
+        #fontToggle {
+            display: none;
+        }
+
+        #fontToggle:checked+label {
+            background-color: #b36301;
         }
 
         .letter-option {
@@ -161,6 +181,7 @@
 
 <body>
     <div id="container">
+        <div class="font-preload">മലയാളം</div>
         <div class="header">
             <select id="categorySelect" class="categorySelect" title="Choose a letter category"
                 onchange="loadLetters()"></select>
@@ -177,6 +198,10 @@
                 onclick="previousLetter()">skip_previous</button>
             <button class="material-symbols-outlined" id="previousDependantLetter" title="Previous dependant letter"
                 onclick="previousDependantLetter()">arrow_back</button>
+            <div class="font-toggle" title="Writing Direction">
+                <input type="checkbox" id="fontToggle">
+                <label class="material-symbols-outlined" for="fontToggle">switch_access_shortcut</label>
+            </div>
             <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
             <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
             <button class="material-symbols-outlined" title="Learn more" onclick="learn()">contact_support</button>
@@ -1631,11 +1656,20 @@
             previousDependantLetterButton.disabled = (currentDependantIndex <= 0);
         }
 
+        const fontToggle = document.getElementById('fontToggle');
+        fontToggle.addEventListener('change', function () {
+            clearCanvas();
+        });
+
         function drawLetterTemplate(letter) {
             currentLetterInTemplate = letter;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-            ctx.font = "250px Arial";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            if (fontToggle.checked) {
+                ctx.font = "250px 'Nupuram Arrows'";
+            } else {
+                ctx.font = "250px Arial";
+            }
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(letter, canvas.width / 2, canvas.height / 2);
