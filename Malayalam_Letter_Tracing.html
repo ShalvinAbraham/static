@@ -102,7 +102,8 @@
         }
 
         #writingDirection:checked+label,
-        #showLetterDisplay:checked+label {
+        #showLetterDisplay:checked+label,
+        #showDependantLetterDisplay:checked+label {
             background-color: #b36301;
         }
 
@@ -211,6 +212,10 @@
             <div class="checkbox-div" title="Toggle letter display">
                 <input type="checkbox" id="showLetterDisplay" checked>
                 <label class="material-symbols-outlined" for="showLetterDisplay">keyboard</label>
+            </div>
+            <div class="checkbox-div" title="Toggle dependant letter display">
+                <input type="checkbox" id="showDependantLetterDisplay">
+                <label class="material-symbols-outlined" for="showDependantLetterDisplay">expand_circle_down</label>
             </div>
             <div class="checkbox-div" title="Writing Direction">
                 <input type="checkbox" id="writingDirection" checked>
@@ -1887,6 +1892,10 @@
 
         document.getElementById("showLetterDisplay").addEventListener("change", function () {
             document.getElementById("letterDisplay").style.display = this.checked ? "block" : "none";
+        });
+
+        document.getElementById("showDependantLetterDisplay").addEventListener("change", function () {
+            document.getElementById("dependantLetters").style.display = this.checked ? "block" : "none";
         });
 
         window.onload = loadCategories;
