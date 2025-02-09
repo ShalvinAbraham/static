@@ -33,6 +33,7 @@
 
         .top {
             height: 225px;
+            overflow: hidden;
         }
 
         .header {
@@ -45,7 +46,7 @@
         .categorySelect {
             left: 20px;
             position: absolute;
-            font-size: 20px;
+            font-size: 19px;
             padding: 4px;
             font-weight: bold;
             margin-bottom: 10px;
@@ -53,6 +54,7 @@
             border: 2px solid #ff6347;
             border-radius: 5px;
             cursor: pointer;
+            outline: none;
         }
 
         .letterDetails {
@@ -148,7 +150,7 @@
         }
 
         .dependant-letter-container {
-            display: flex;
+            display: none;
             flex-wrap: nowrap;
             justify-content: center;
             gap: 10px;
@@ -192,7 +194,7 @@
             <div class="header">
                 <select id="categorySelect" class="categorySelect" title="Choose a letter category"
                     onchange="loadLetters()"></select>
-                <div id="letter-details" class="letterDetails"> </div>
+                <div id="letterDetails" class="letterDetails"> </div>
                 <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
             </div>
 
@@ -211,7 +213,7 @@
                 onclick="previousDependantLetter()">arrow_back</button>
             <div class="checkbox-div" title="Toggle letter display">
                 <input type="checkbox" id="showLetterDisplay" checked>
-                <label class="material-symbols-outlined" for="showLetterDisplay">keyboard</label>
+                <label class="material-symbols-outlined" for="showLetterDisplay">explore_off</label>
             </div>
             <div class="checkbox-div" title="Toggle dependant letter display">
                 <input type="checkbox" id="showDependantLetterDisplay">
@@ -384,7 +386,7 @@
                 "ml": "ക",
                 "en": "ka",
                 "group": "Consonants",
-                "subgroup": "Velar",
+                "subgroup": "ക - Velar",
                 "dependants": [
                     { "ml": "കാ", "en": "kaa" },
                     { "ml": "കി", "en": "ki" },
@@ -410,7 +412,7 @@
                 "ml": "ഖ",
                 "en": "kha",
                 "group": "Consonants",
-                "subgroup": "Velar",
+                "subgroup": "ക - Velar",
                 "dependants": [
                     { "ml": "ഖാ", "en": "khaa" },
                     { "ml": "ഖി", "en": "khi" },
@@ -435,7 +437,7 @@
                 "ml": "ഗ",
                 "en": "ga",
                 "group": "Consonants",
-                "subgroup": "Velar",
+                "subgroup": "ക - Velar",
                 "dependants": [
                     { "ml": "ഗാ", "en": "gaa" },
                     { "ml": "ഗി", "en": "gi" },
@@ -460,7 +462,7 @@
                 "ml": "ഘ",
                 "en": "gha",
                 "group": "Consonants",
-                "subgroup": "Velar",
+                "subgroup": "ക - Velar",
                 "dependants": [
                     { "ml": "ഘാ", "en": "ghaa" },
                     { "ml": "ഘി", "en": "ghi" },
@@ -485,7 +487,7 @@
                 "ml": "ങ",
                 "en": "ṅa",
                 "group": "Consonants",
-                "subgroup": "Velar",
+                "subgroup": "ക - Velar",
                 "dependants": [
                     { "ml": "ങാ", "en": "ṅaa" },
                     { "ml": "ങി", "en": "ṅi" },
@@ -510,7 +512,7 @@
                 "ml": "ച",
                 "en": "cha",
                 "group": "Consonants",
-                "subgroup": "Postalveolar",
+                "subgroup": "ച - Postalveolar",
                 "dependants": [
                     { "ml": "ചാ", "en": "chaa" },
                     { "ml": "ചി", "en": "chi" },
@@ -535,7 +537,7 @@
                 "ml": "ഛ",
                 "en": "chha",
                 "group": "Consonants",
-                "subgroup": "Postalveolar",
+                "subgroup": "ച - Postalveolar",
                 "dependants": [
                     { "ml": "ഛാ", "en": "chhaa" },
                     { "ml": "ഛി", "en": "chhi" },
@@ -560,7 +562,7 @@
                 "ml": "ജ",
                 "en": "ja",
                 "group": "Consonants",
-                "subgroup": "Postalveolar",
+                "subgroup": "ച - Postalveolar",
                 "dependants": [
                     { "ml": "ജാ", "en": "jaa" },
                     { "ml": "ജി", "en": "ji" },
@@ -585,7 +587,7 @@
                 "ml": "ഝ",
                 "en": "jha",
                 "group": "Consonants",
-                "subgroup": "Postalveolar",
+                "subgroup": "ച - Postalveolar",
                 "dependants": [
                     { "ml": "ഝാ", "en": "jhaa" },
                     { "ml": "ഝി", "en": "jhi" },
@@ -610,7 +612,7 @@
                 "ml": "ഞ",
                 "en": "ña",
                 "group": "Consonants",
-                "subgroup": "Postalveolar",
+                "subgroup": "ച - Postalveolar",
                 "dependants": [
                     { "ml": "ഞാ", "en": "ñaa" },
                     { "ml": "ഞി", "en": "ñi" },
@@ -635,7 +637,7 @@
                 "ml": "ട",
                 "en": "ṭa",
                 "group": "Consonants",
-                "subgroup": "Retroflex",
+                "subgroup": "ട - Retroflex",
                 "dependants": [
                     { "ml": "ടാ", "en": "ṭaa" },
                     { "ml": "ടി", "en": "ṭi" },
@@ -660,7 +662,7 @@
                 "ml": "ഠ",
                 "en": "ṭha",
                 "group": "Consonants",
-                "subgroup": "Retroflex",
+                "subgroup": "ട - Retroflex",
                 "dependants": [
                     { "ml": "ഠാ", "en": "ṭhaa" },
                     { "ml": "ഠി", "en": "ṭhi" },
@@ -685,7 +687,7 @@
                 "ml": "ഡ",
                 "en": "ḍa",
                 "group": "Consonants",
-                "subgroup": "Retroflex",
+                "subgroup": "ട - Retroflex",
                 "dependants": [
                     { "ml": "ഡാ", "en": "ḍaa" },
                     { "ml": "ഡി", "en": "ḍi" },
@@ -710,7 +712,7 @@
                 "ml": "ഢ",
                 "en": "ḍha",
                 "group": "Consonants",
-                "subgroup": "Retroflex",
+                "subgroup": "ട - Retroflex",
                 "dependants": [
                     { "ml": "ഢാ", "en": "ḍhaa" },
                     { "ml": "ഢി", "en": "ḍhi" },
@@ -735,7 +737,7 @@
                 "ml": "ണ",
                 "en": "ṇa",
                 "group": "Consonants",
-                "subgroup": "Retroflex",
+                "subgroup": "ട - Retroflex",
                 "dependants": [
                     { "ml": "ണാ", "en": "ṇaa" },
                     { "ml": "ണി", "en": "ṇi" },
@@ -760,7 +762,7 @@
                 "ml": "ത",
                 "en": "ta",
                 "group": "Consonants",
-                "subgroup": "Dental",
+                "subgroup": "ത - Dental",
                 "dependants": [
                     { "ml": "താ", "en": "taa" },
                     { "ml": "തി", "en": "ti" },
@@ -785,7 +787,7 @@
                 "ml": "ഥ",
                 "en": "tha",
                 "group": "Consonants",
-                "subgroup": "Dental",
+                "subgroup": "ത - Dental",
                 "dependants": [
                     { "ml": "ഥാ", "en": "thaa" },
                     { "ml": "ഥി", "en": "thi" },
@@ -810,7 +812,7 @@
                 "ml": "ദ",
                 "en": "da",
                 "group": "Consonants",
-                "subgroup": "Dental",
+                "subgroup": "ത - Dental",
                 "dependants": [
                     { "ml": "ദാ", "en": "daa" },
                     { "ml": "ദി", "en": "di" },
@@ -835,7 +837,7 @@
                 "ml": "ധ",
                 "en": "dha",
                 "group": "Consonants",
-                "subgroup": "Dental",
+                "subgroup": "ത - Dental",
                 "dependants": [
                     { "ml": "ധാ", "en": "dhaa" },
                     { "ml": "ധി", "en": "dhi" },
@@ -860,7 +862,7 @@
                 "ml": "ന",
                 "en": "na",
                 "group": "Consonants",
-                "subgroup": "Dental",
+                "subgroup": "ത - Dental",
                 "dependants": [
                     { "ml": "നാ", "en": "naa" },
                     { "ml": "നി", "en": "ni" },
@@ -885,7 +887,7 @@
                 "ml": "പ",
                 "en": "pa",
                 "group": "Consonants",
-                "subgroup": "Labial",
+                "subgroup": "പ - Labial",
                 "dependants": [
                     { "ml": "പാ", "en": "paa" },
                     { "ml": "പി", "en": "pi" },
@@ -910,7 +912,7 @@
                 "ml": "ഫ",
                 "en": "pha",
                 "group": "Consonants",
-                "subgroup": "Labial",
+                "subgroup": "പ - Labial",
                 "dependants": [
                     { "ml": "ഫാ", "en": "phaa" },
                     { "ml": "ഫി", "en": "phi" },
@@ -935,7 +937,7 @@
                 "ml": "ബ",
                 "en": "ba",
                 "group": "Consonants",
-                "subgroup": "Labial",
+                "subgroup": "പ - Labial",
                 "dependants": [
                     { "ml": "ബാ", "en": "baa" },
                     { "ml": "ബി", "en": "bi" },
@@ -960,7 +962,7 @@
                 "ml": "ഭ",
                 "en": "bha",
                 "group": "Consonants",
-                "subgroup": "Labial",
+                "subgroup": "പ - Labial",
                 "dependants": [
                     { "ml": "ഭാ", "en": "bhaa" },
                     { "ml": "ഭി", "en": "bhi" },
@@ -985,7 +987,7 @@
                 "ml": "മ",
                 "en": "ma",
                 "group": "Consonants",
-                "subgroup": "Labial",
+                "subgroup": "പ - Labial",
                 "dependants": [
                     { "ml": "മാ", "en": "maa" },
                     { "ml": "മി", "en": "mi" },
@@ -1010,7 +1012,7 @@
                 "ml": "യ",
                 "en": "ya",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "യാ", "en": "yaa" },
                     { "ml": "യി", "en": "yi" },
@@ -1035,7 +1037,7 @@
                 "ml": "ര",
                 "en": "ra",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "രാ", "en": "raa" },
                     { "ml": "രി", "en": "ri" },
@@ -1060,7 +1062,7 @@
                 "ml": "ല",
                 "en": "la",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "ലാ", "en": "laa" },
                     { "ml": "ലി", "en": "li" },
@@ -1085,7 +1087,7 @@
                 "ml": "വ",
                 "en": "va",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "വാ", "en": "vaa" },
                     { "ml": "വി", "en": "vi" },
@@ -1110,7 +1112,7 @@
                 "ml": "ശ",
                 "en": "śa",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "ശാ", "en": "śaa" },
                     { "ml": "ശി", "en": "śi" },
@@ -1135,7 +1137,7 @@
                 "ml": "ഷ",
                 "en": "ṣa",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "ഷാ", "en": "ṣaa" },
                     { "ml": "ഷി", "en": "ṣi" },
@@ -1160,7 +1162,7 @@
                 "ml": "സ",
                 "en": "sa",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "സാ", "en": "saa" },
                     { "ml": "സി", "en": "si" },
@@ -1185,7 +1187,7 @@
                 "ml": "ഹ",
                 "en": "ha",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "ഹാ", "en": "haa" },
                     { "ml": "ഹി", "en": "hi" },
@@ -1210,7 +1212,7 @@
                 "ml": "ള",
                 "en": "ḷa",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "ളാ", "en": "ḷaa" },
                     { "ml": "ളി", "en": "ḷi" },
@@ -1235,7 +1237,7 @@
                 "ml": "ഴ",
                 "en": "ḻa",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "ഴാ", "en": "ḻaa" },
                     { "ml": "ഴി", "en": "ḻi" },
@@ -1260,7 +1262,7 @@
                 "ml": "റ",
                 "en": "ṟa",
                 "group": "Consonants",
-                "subgroup": "Others",
+                "subgroup": "യ - Others",
                 "dependants": [
                     { "ml": "റാ", "en": "ṟaa" },
                     { "ml": "റി", "en": "ṟi" },
@@ -1554,7 +1556,10 @@
             }
         ];
 
-        const letterData = [...data, ...data.map(letter => ({ ...letter, subgroup: letter.subgroup || letter.group, group: "All Letters" }))]
+        const letterData = [...data
+            , ...data.filter(letter => letter.subgroup).map(letter => ({ ...letter, group: letter.subgroup }))
+            , ...data.map(letter => ({ ...letter, subgroup: letter.subgroup || letter.group, group: "All Letters" }))
+        ]
 
         const categorySelect = document.getElementById("categorySelect");
 
@@ -1655,7 +1660,7 @@
 
                 detailsHtml += `<span> :: ${examples}</span>`;
             }
-            document.getElementById("letter-details").innerHTML = detailsHtml;
+            document.getElementById("letterDetails").innerHTML = detailsHtml;
         }
 
         function generateDependantLetters(letterObj) {
@@ -1892,10 +1897,12 @@
 
         document.getElementById("showLetterDisplay").addEventListener("change", function () {
             document.getElementById("letterDisplay").style.display = this.checked ? "block" : "none";
+            document.getElementById("letterDetails").style.display = this.checked ? "block" : "none";
+            document.getElementById("categorySelect").style.display = this.checked ? "block" : "none";
         });
 
         document.getElementById("showDependantLetterDisplay").addEventListener("change", function () {
-            document.getElementById("dependantLetters").style.display = this.checked ? "block" : "none";
+            document.getElementById("dependantLetters").style.display = this.checked ? "flex" : "none";
         });
 
         window.onload = loadCategories;
