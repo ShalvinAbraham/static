@@ -115,6 +115,8 @@
             margin: 0px 10px;
             border: 5px solid #ff6347;
             border-radius: 10px;
+            display: none;
+            background-size: 100% 100%;
         }
     </style>
 </head>
@@ -292,7 +294,7 @@
             const selectedLevel = document.getElementById("levelSelect").value;
             const filteredWords = words.filter(word => word.level === selectedLevel);
             currentWord = filteredWords[Math.floor(Math.random() * filteredWords.length)];
-            fetchImage(`"${currentWord.meaning}" ${currentWord.ml}`)
+            fetchImage(`"${currentWord.meaning}"`)
             drawWordTemplate(currentWord.ml);
             document.getElementById("wordDetails").innerHTML = `<span>Word: <b>${currentWord.ml}</b> <b>::</b> Pronounciation: <b>${currentWord.en}</b> <b>::</b> Meaning: <b>${currentWord.meaning}</b></span>`;
         }
@@ -349,16 +351,27 @@
                 const data = await response.json();
 
                 if (data && data.items && data.items.length > 0) {
-                    const firstImageUrl = data.items[0].link;
-                    imageContainer.innerHTML = ''
-                    imageContainer.style.backgroundImage = `url('${firstImageUrl}')`;
+                    const firstValidImage = data.items.find(item => isValidImageUrl(item.link));
+                    if (firstValidImage) {
+                        imageContainer.style.display = 'block';
+                        imageContainer.style.backgroundImage = `url('${firstValidImage.link}')`;
+                    } else {
+                        throw (data)
+                    }
                 } else {
                     throw (data)
                 }
             } catch (error) {
-                imageContainer.innerHTML = `<div class="material-symbols-outlined">photo_camera</div>`
-                imageContainer.style.backgroundImage = null;
+                imageContainer.style.display = 'none';
             }
+        }
+
+        const validImageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"];
+
+        function isValidImageUrl(url) {
+            const isImage = validImageExtensions.some(ext => url.toLowerCase().endsWith(ext));
+            const hasNoQueryParams = !url.includes("?");
+            return isImage && hasNoQueryParams;
         }
 
         // Enable drawing on the canvas
