@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malayalam Words</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #FFFAF0;
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            display: box;
+            margin-top: 20px;
+        }
+
+        .header {
+            margin: 20px;
+            margin-bottom: 0px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .levelSelect {
+            left: 20px;
+            position: absolute;
+            font-size: 19px;
+            padding: 4px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background-color: #ffebcd;
+            border: 2px solid #ff6347;
+            border-radius: 5px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .wordDetails {
+            padding: 6px;
+            margin-bottom: 10px;
+            background-color: #ffebcd;
+            border: 2px solid #ff6347;
+        }
+
+        canvas {
+            border: 5px solid #ff6347;
+            background-color: white;
+            width: 1000px;
+            height: 500px;
+            border-radius: 10px;
+            touch-action: none;
+        }
+
+        .controls {
+            margin-top: 5px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .controls>button,
+        .checkbox-div>label {
+            background-color: #ff6347;
+            color: white;
+            font-size: 18px;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .controls>button:hover {
+            background-color: #ff4500;
+        }
+
+        .controls>button:disabled {
+            background-color: #cccccc;
+        }
+
+        .fullscreen {
+            width: 35px;
+            height: 35px;
+            right: 20px;
+            padding: 2px;
+            position: absolute;
+            background-color: #ffebcd;
+            border: 2px solid #ff6347;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div class="header">
+            <select id="levelSelect" class="levelSelect" title="Choose a level" onchange="loadRandomWord()"></select>
+            <div id="wordDetails" class="wordDetails"></div>
+            <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
+        </div>
+        <canvas id="tracingCanvas" width="800" height="400"></canvas>
+        <div class="controls">
+            <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
+            <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
+            <button class="material-symbols-outlined" title="Help" onclick="imageSearch()">image_search</button>
+            <button class="material-symbols-outlined" title="Listen" onclick="listen()">text_to_speech</button>
+            <button class="material-symbols-outlined" onclick="loadRandomWord()"
+                title="New Word">&nbsp;&nbsp;&nbsp;shuffle&nbsp;&nbsp;&nbsp;</button>
+        </div>
+    </div>
+
+    <script>
+        // Dataset
+        const words = [
+            { "level": "1", "ml": "അമ്മ", "en": "Amma", meaning: "Mother" },
+            { "level": "1", "ml": "അപ്പ", "en": "Appa", meaning: "Father" },
+            { "level": "1", "ml": "പഴം", "en": "Pazham", meaning: "Fruit" },
+            { "level": "1", "ml": "പശു", "en": "Pashu", meaning: "Cow" },
+            { "level": "1", "ml": "മരം", "en": "Maram", meaning: "Tree" },
+            { "level": "1", "ml": "വാതിൽ", "en": "Vathil", meaning: "Door" },
+            { "level": "1", "ml": "നിലം", "en": "Nilam", meaning: "Ground" },
+            { "level": "1", "ml": "കടൽ", "en": "Kadal", meaning: "Sea" },
+            { "level": "1", "ml": "കുട", "en": "Kuda", meaning: "Umbrella" },
+            { "level": "1", "ml": "പൂ", "en": "Poo", meaning: "Flower" },
+            { "level": "1", "ml": "മീൻ", "en": "Meen", meaning: "Fish" },
+            { "level": "1", "ml": "പാല", "en": "Paala", meaning: "Milk" },
+            { "level": "1", "ml": "പച്ച", "en": "Pacha", meaning: "Green" },
+            { "level": "1", "ml": "കാട്", "en": "Kadu", meaning: "Forest" },
+            { "level": "1", "ml": "വെള്ളം", "en": "Vellam", meaning: "Water" },
+            { "level": "1", "ml": "മണ്ണ്", "en": "Mannu", meaning: "Soil" },
+            { "level": "1", "ml": "പാത", "en": "Paatha", meaning: "Road" },
+            { "level": "1", "ml": "കണ്ണ്", "en": "Kannu", meaning: "Eye" },
+            { "level": "1", "ml": "കൈ", "en": "Kai", meaning: "Hand" },
+            { "level": "1", "ml": "പാദം", "en": "Paadam", meaning: "Foot" },
+            { "level": "1", "ml": "മുഖം", "en": "Mukham", meaning: "Face" },
+            { "level": "1", "ml": "വായ്", "en": "Vaay", meaning: "Mouth" },
+            { "level": "1", "ml": "നാക്ക്", "en": "Naakku", meaning: "Tongue" },
+            { "level": "1", "ml": "മൂക്ക്", "en": "Mookku", meaning: "Nose" },
+            { "level": "1", "ml": "ചെവി", "en": "Chevi", meaning: "Ear" },
+            { "level": "1", "ml": "തല", "en": "Thala", meaning: "Head" },
+            { "level": "1", "ml": "വേർ", "en": "Ver", meaning: "Root" },
+            { "level": "1", "ml": "പക്ഷി", "en": "Pakshi", meaning: "Bird" },
+            { "level": "1", "ml": "പന്നി", "en": "Panni", meaning: "Pig" },
+            { "level": "1", "ml": "പൂച്ച", "en": "Poocha", meaning: "Cat" },
+            { "level": "1", "ml": "നായ", "en": "Naaya", meaning: "Dog" },
+            { "level": "1", "ml": "ആന", "en": "Aana", meaning: "Elephant" },
+            { "level": "1", "ml": "പാമ്പ്", "en": "Paambu", meaning: "Snake" },
+            { "level": "1", "ml": "പുഴ", "en": "Puzha", meaning: "River" },
+            { "level": "1", "ml": "മഴ", "en": "Mazha", meaning: "Rain" },
+            { "level": "1", "ml": "വെയിൽ", "en": "Veyil", meaning: "Sun" },
+            { "level": "1", "ml": "നക്ഷത്രം", "en": "Nakshatram", meaning: "Star" },
+            { "level": "1", "ml": "ചന്ദ്രൻ", "en": "Chandran", meaning: "Moon" },
+            { "level": "1", "ml": "പഞ്ച്", "en": "Panchu", meaning: "Five" },
+            { "level": "1", "ml": "ഒന്ന്", "en": "Onnu", meaning: "One" },
+            { "level": "1", "ml": "രണ്ട്", "en": "Randu", meaning: "Two" },
+            { "level": "1", "ml": "മൂന്ന്", "en": "Moonnu", meaning: "Three" },
+            { "level": "1", "ml": "നാല്", "en": "Naalu", meaning: "Four" },
+            { "level": "1", "ml": "ആറ്", "en": "Aaru", meaning: "Six" },
+            { "level": "1", "ml": "ഏഴ്", "en": "Ezh", meaning: "Seven" },
+            { "level": "1", "ml": "എട്ട്", "en": "Ettu", meaning: "Eight" },
+            { "level": "1", "ml": "ഒമ്പത്", "en": "Ompathu", meaning: "Nine" },
+            { "level": "1", "ml": "പത്ത്", "en": "Pathu", meaning: "Ten" },
+            { "level": "1", "ml": "നീല", "en": "Neela", meaning: "Blue" },
+            { "level": "1", "ml": "ചുവപ്പ്", "en": "Chuvappu", meaning: "Red" },
+            { "level": "1", "ml": "മഞ്ഞ", "en": "Manja", meaning: "Yellow" },
+            { "level": "1", "ml": "വെളുപ്പ്", "en": "Veluppu", meaning: "White" },
+            { "level": "1", "ml": "കറുപ്പ്", "en": "Karuppu", meaning: "Black" },
+            { "level": "1", "ml": "താമര", "en": "Thaamara", meaning: "Lotus" },
+            { "level": "1", "ml": "പൂവ്", "en": "Poovu", meaning: "Flower" },
+            { "level": "1", "ml": "പച്ചില", "en": "Pachila", meaning: "Leaf" },
+            { "level": "1", "ml": "കായ്", "en": "Kaay", meaning: "Fruit" },
+            { "level": "1", "ml": "തേങ്ങ", "en": "Thenga", meaning: "Coconut" },
+            { "level": "1", "ml": "മാങ്ങ", "en": "Maanga", meaning: "Mango" },
+            { "level": "1", "ml": "വാഴ", "en": "Vaazha", meaning: "Banana" },
+            { "level": "1", "ml": "പുളി", "en": "Puli", meaning: "Tamarind" },
+            { "level": "1", "ml": "നാരങ്ങ", "en": "Narang", "meaning": "Orange" },
+            { "level": "1", "ml": "പേര", "en": "Pera", "meaning": "Guava" },
+            { "level": "1", "ml": "പപ്പായ", "en": "Pappaya", "meaning": "Papaya" },
+            { "level": "1", "ml": "പുള്ള്", "en": "Pullu", "meaning": "Grass" },
+            { "level": "1", "ml": "പാട്", "en": "Paadu", "meaning": "Song" },
+            { "level": "1", "ml": "നൃത്തം", "en": "Nritham", "meaning": "Dance" },
+            { "level": "1", "ml": "കളി", "en": "Kali", "meaning": "Game" },
+            { "level": "1", "ml": "പന്ത്", "en": "Panthu", "meaning": "Ball" },
+            { "level": "1", "ml": "കട്ടിൽ", "en": "Kattil", "meaning": "Bed" },
+            { "level": "1", "ml": "മേശ", "en": "Mesha", "meaning": "Table" },
+            { "level": "1", "ml": "നിലവിളക്ക്", "en": "Nilavilakku", "meaning": "Lamp" },
+            { "level": "1", "ml": "വിളക്ക്", "en": "Vilakku", "meaning": "Lamp" },
+            { "level": "1", "ml": "പുസ്തകം", "en": "Pusthakam", "meaning": "Book" },
+            { "level": "1", "ml": "പേന", "en": "Pena", "meaning": "Pen" },
+            { "level": "1", "ml": "പെൻസിൽ", "en": "Pencil", "meaning": "Pencil" },
+            { "level": "1", "ml": "ചിത്രം", "en": "Chithram", "meaning": "Picture" },
+            { "level": "1", "ml": "ചാര്", "en": "Chaaru", "meaning": "Chair" },
+            { "level": "1", "ml": "പാട്ട്", "en": "Paattu", "meaning": "Song" },
+            { "level": "1", "ml": "നാടകം", "en": "Naadakam", "meaning": "Drama" },
+            { "level": "1", "ml": "സിനിമ", "en": "Cinema", "meaning": "Movie" },
+            { "level": "1", "ml": "അമ്മ", "en": "Amma", "meaning": "Mother" },
+            { "level": "1", "ml": "അച്ഛൻ", "en": "Achhan", "meaning": "Father" },
+            { "level": "1", "ml": "കുടം", "en": "Kudam", "meaning": "Pot" },
+            { "level": "1", "ml": "മണി", "en": "Mani", "meaning": "Bell" },
+            { "level": "1", "ml": "വാതിൽ", "en": "Vathil", "meaning": "Door" },
+            { "level": "1", "ml": "മീൻ", "en": "Meen", "meaning": "Fish" },
+            { "level": "1", "ml": "പക്ഷി", "en": "Pakshi", "meaning": "Bird" },
+            { "level": "1", "ml": "മരച്ചീനി", "en": "Marachini", "meaning": "Cassava" },
+            { "level": "1", "ml": "കുട്ടി", "en": "Kutti", "meaning": "Kid" },
+            { "level": "1", "ml": "ചിതൽ", "en": "Chithal", "meaning": "Spotted" },
+            { "level": "1", "ml": "തൊപ്പി", "en": "Thoppi", "meaning": "Cap" },
+            { "level": "1", "ml": "നക്ഷത്രം", "en": "Nakshathram", "meaning": "Star" },
+            { "level": "1", "ml": "പുഴ", "en": "Puzha", "meaning": "River" },
+            { "level": "1", "ml": "കടൽ", "en": "Kadal", "meaning": "Sea" },
+            { "level": "1", "ml": "പൂച്ച", "en": "Poocha", "meaning": "Cat" },
+            { "level": "1", "ml": "നിലം", "en": "Nilam", "meaning": "Land" },
+            { "level": "1", "ml": "പൂ", "en": "Poo", "meaning": "Flower" },
+            { "level": "1", "ml": "കാക്ക", "en": "Kakka", "meaning": "Crow" },
+            { "level": "1", "ml": "ആന", "en": "Aana", "meaning": "Elephant" },
+            { "level": "1", "ml": "കതിര്", "en": "Kathir", "meaning": "Ear of grain" },
+            { "level": "1", "ml": "ചന്ത", "en": "Chanta", "meaning": "Market" },
+            { "level": "1", "ml": "മഴ", "en": "Mazha", "meaning": "Rain" },
+            { "level": "1", "ml": "അരിപ്പ", "en": "Arippa", "meaning": "Sieve" },
+            { "level": "1", "ml": "കുട", "en": "Kuda", "meaning": "Umbrella" },
+            { "level": "1", "ml": "ചുട", "en": "Chuda", "meaning": "Hot" },
+            { "level": "1", "ml": "മുട്ട", "en": "Mutta", "meaning": "Egg" },
+            { "level": "1", "ml": "പഴം", "en": "Pazham", "meaning": "Banana" },
+            { "level": "1", "ml": "ചക്ക", "en": "Chakka", "meaning": "Jackfruit" },
+            { "level": "1", "ml": "പനി", "en": "Pani", "meaning": "Fever" },
+            { "level": "1", "ml": "ചിത", "en": "Chitha", "meaning": "Cheetah" },
+            { "level": "1", "ml": "കുടിയ", "en": "Kudiya", "meaning": "Short" },
+            { "level": "1", "ml": "അനന്ദം", "en": "Anandam", "meaning": "Happiness" },
+            { "level": "1", "ml": "മുല", "en": "Mula", "meaning": "Breast" },
+            { "level": "1", "ml": "കുയിൽ", "en": "Kuyil", "meaning": "Cuckoo" },
+            { "level": "1", "ml": "കതിർ", "en": "Kathir", "meaning": "Ear of grain" },
+            { "level": "1", "ml": "ചിതം", "en": "Chitham", "meaning": "Thought" },
+            { "level": "1", "ml": "മനസു", "en": "Manasu", "meaning": "Mind" },
+            { "level": "1", "ml": "ചില", "en": "Chila", "meaning": "Few" },
+            { "level": "1", "ml": "വല", "en": "Vala", "meaning": "Net" },
+            { "level": "1", "ml": "കിളി", "en": "Kili", "meaning": "Parrot" },
+            { "level": "1", "ml": "തൂവൽ", "en": "Thooval", "meaning": "Feather" },
+            { "level": "1", "ml": "ചിത", "en": "Chitha", "meaning": "Picture" },
+            { "level": "1", "ml": "കത", "en": "Katha", "meaning": "Story" },
+            { "level": "1", "ml": "ചേല", "en": "Chela", "meaning": "Mat" },
+            { "level": "1", "ml": "അന", "en": "Ana", "meaning": "Without" },
+            { "level": "1", "ml": "കുള", "en": "Kula", "meaning": "Pond" },
+            { "level": "1", "ml": "ചുട", "en": "Chuda", "meaning": "Burning" },
+            { "level": "1", "ml": "കിളിവാതിൽ", "en": "Kilivathil", "meaning": "Ventilator" },
+            { "level": "1", "ml": "ചങ്ങ", "en": "Changa", "meaning": "Excellent" },
+            { "level": "1", "ml": "ചെടി", "en": "Cheti", "meaning": "Plant" },
+            { "level": "1", "ml": "താടി", "en": "Thadi", "meaning": "Beard" },
+            { "level": "1", "ml": "ചിരി", "en": "Chiri", "meaning": "Smile" },
+            { "level": "2", "ml": "വെള്ളം", "en": "Vellam", "meaning": "Water" },
+            { "level": "2", "ml": "പുസ്തകം", "en": "Pusthakam", "meaning": "Book" },
+            { "level": "2", "ml": "ചന്ദ്രൻ", "en": "Chandran", "meaning": "Moon" },
+            { "level": "2", "ml": "സൂര്യൻ", "en": "Sooryan", "meaning": "Sun" },
+            { "level": "2", "ml": "മീൻ", "en": "Meen", "meaning": "Fish" }
+        ];
+
+        const canvas = document.getElementById("tracingCanvas");
+        const ctx = canvas.getContext("2d");
+        const wordDetails = document.getElementById("wordDetails");
+
+        let currentWord = null;
+
+        function loadLevels() {
+            const levelSelect = document.getElementById("levelSelect")
+            levelSelect.innerHTML = "";
+            const levels = [...new Set(words.map(item => item.level))];
+            levels.forEach((level, index) => {
+                const option = document.createElement("option");
+                option.value = level;
+                option.textContent = "Level " + level;
+                if (index === 0) {
+                    option.selected = true;
+                }
+                levelSelect.appendChild(option);
+            });
+            loadRandomWord();
+        }
+
+        // Function to load a random word
+        function loadRandomWord() {
+            const selectedLevel = document.getElementById("levelSelect").value;
+            const filteredWords = words.filter(word => word.level === selectedLevel);
+            currentWord = filteredWords[Math.floor(Math.random() * filteredWords.length)];
+            drawWordTemplate(currentWord.ml);
+            wordDetails.innerHTML = `<span>Word: <b>${currentWord.ml}</b> <b>::</b> Pronounciation: <b>${currentWord.en}</b> <b>::</b> Meaning: <b>${currentWord.meaning}</b></span>`;
+        }
+
+        // Function to draw the word on the canvas
+        function drawWordTemplate(word) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "150px Arial";
+            ctx.fillText(word, canvas.width / 2, canvas.height / 2);
+        }
+
+        // Function to clear the canvas
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawWordTemplate(currentWord.ml);
+        }
+
+        // Function to download the canvas drawing
+        function download() {
+            const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
+            canvas.toBlob(function (blob) {
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `malayalam_word_${currentWord.ml}_${timestamp}.png`;
+                link.click();
+            }, "image/png");
+        }
+
+        function imageSearch() {
+            window.open(`https://www.google.com/search?udm=2&q="${currentWord.ml}"`, '_blank');
+        }
+
+        function listen() {
+            window.open(`https://www.google.com/search?q=Pronounce%20Malayalam%20Word%20"${currentWord.ml}"`, '_blank');
+        }
+
+        // Enable drawing on the canvas
+        let drawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        canvas.addEventListener('mousedown', function (e) {
+            drawing = true;
+            lastX = e.offsetX;
+            lastY = e.offsetY;
+        });
+
+        canvas.addEventListener('mousemove', function (e) {
+            if (!drawing) return;
+            drawLine(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('mouseup', function () {
+            drawing = false;
+        });
+
+        canvas.addEventListener('mouseout', function () {
+            drawing = false;
+        });
+
+        // Touch drawing events
+        canvas.addEventListener('touchstart', function (e) {
+            e.preventDefault();
+            drawing = true;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            lastX = touch.clientX - rect.left;
+            lastY = touch.clientY - rect.top;
+        });
+
+        canvas.addEventListener('touchmove', function (e) {
+            e.preventDefault();
+            if (!drawing) return;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            drawLine(touch.clientX - rect.left, touch.clientY - rect.top);
+        });
+
+        canvas.addEventListener('touchend', function () {
+            drawing = false;
+        });
+
+        function drawLine(x, y) {
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = '#FF6347';
+            ctx.lineWidth = 10;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            lastX = x;
+            lastY = y;
+        }
+
+        // Fullscreen functionality
+        const container = document.getElementById("container");
+        const fullscreenButton = document.getElementById("fullscreen");
+
+        fullscreenButton.addEventListener("click", () => {
+            if (!document.fullscreenElement) {
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        loadLevels();
+    </script>
+</body>
+
+</html>
