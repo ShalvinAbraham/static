@@ -98,6 +98,24 @@
             overflow: hidden;
             outline: none;
         }
+
+        .middle {
+            margin: auto;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        .imageContainer {
+            width: 500px;
+            height: 500px;
+            padding: 5px;
+            background-size: cover;
+            background-position: center;
+            margin: 0px 10px;
+            border: 5px solid #ff6347;
+            border-radius: 10px;
+        }
     </style>
 </head>
 
@@ -108,7 +126,10 @@
             <div id="wordDetails" class="wordDetails"></div>
             <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
         </div>
-        <canvas id="tracingCanvas" width="1000" height="500"></canvas>
+        <div class="middle">
+            <canvas id="tracingCanvas" width="1000" height="500"></canvas>
+            <div id="imageContainer" class="imageContainer"></div>
+        </div>
         <div class="controls">
             <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
             <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
@@ -186,7 +207,7 @@
             { "level": "1", "ml": "പേര", "en": "Pera", "meaning": "Guava" },
             { "level": "1", "ml": "പപ്പായ", "en": "Pappaya", "meaning": "Papaya" },
             { "level": "1", "ml": "പുള്ള്", "en": "Pullu", "meaning": "Grass" },
-            { "level": "1", "ml": "പാട്", "en": "Paadu", "meaning": "Song" },
+            { "level": "1", "ml": "പാട്ട്", "en": "Pattu", "meaning": "Song" },
             { "level": "1", "ml": "നൃത്തം", "en": "Nritham", "meaning": "Dance" },
             { "level": "1", "ml": "കളി", "en": "Kali", "meaning": "Game" },
             { "level": "1", "ml": "പന്ത്", "en": "Panthu", "meaning": "Ball" },
@@ -222,12 +243,12 @@
             { "level": "1", "ml": "മഴ", "en": "Mazha", "meaning": "Rain" },
             { "level": "1", "ml": "അരിപ്പ", "en": "Arippa", "meaning": "Sieve" },
             { "level": "1", "ml": "കുട", "en": "Kuda", "meaning": "Umbrella" },
-            { "level": "1", "ml": "ചുട", "en": "Chuda", "meaning": "Hot" },
+            { "level": "1", "ml": "ചൂട്", "en": "Chuda", "meaning": "Hot" },
             { "level": "1", "ml": "മുട്ട", "en": "Mutta", "meaning": "Egg" },
             { "level": "1", "ml": "പഴം", "en": "Pazham", "meaning": "Banana" },
             { "level": "1", "ml": "ചക്ക", "en": "Chakka", "meaning": "Jackfruit" },
             { "level": "1", "ml": "പനി", "en": "Pani", "meaning": "Fever" },
-            { "level": "1", "ml": "അനന്ദം", "en": "Anandam", "meaning": "Happiness" },
+            { "level": "1", "ml": "ആനന്ദം", "en": "Aanandam", "meaning": "Happiness" },
             { "level": "1", "ml": "കുയിൽ", "en": "Kuyil", "meaning": "Cuckoo" },
             { "level": "1", "ml": "ചിന്ത", "en": "Chitham", "meaning": "Thought" },
             { "level": "1", "ml": "മനസ്", "en": "Manasu", "meaning": "Mind" },
@@ -271,6 +292,7 @@
             const selectedLevel = document.getElementById("levelSelect").value;
             const filteredWords = words.filter(word => word.level === selectedLevel);
             currentWord = filteredWords[Math.floor(Math.random() * filteredWords.length)];
+            fetchImage(currentWord.ml)
             drawWordTemplate(currentWord.ml);
             document.getElementById("wordDetails").innerHTML = `<span>Word: <b>${currentWord.ml}</b> <b>::</b> Pronounciation: <b>${currentWord.en}</b> <b>::</b> Meaning: <b>${currentWord.meaning}</b></span>`;
         }
@@ -303,11 +325,39 @@
         }
 
         function imageSearch() {
-            window.open(`https://www.google.com/search?udm=2&q="${currentWord.ml}"`, '_blank');
+            window.open(`https://www.google.com/search?tbm=isch&tbs=itp:photo&q="${currentWord.ml}"`, '_blank');
         }
 
         function listen() {
             window.open(`https://www.google.com/search?q=Pronounce%20Malayalam%20Word%20"${currentWord.ml}"`, '_blank');
+        }
+
+        const apiKey = "AIzaSyAadS7ye759yzi6RRdTqck9Czn5I_sxkbg";
+        const searchEngineId = "f20ea363844504509";
+        const imageContainer = document.getElementById("imageContainer");
+
+        async function fetchImage(word) {
+            const query = word.trim();
+            if (!query) {
+                return;
+            }
+
+            try {
+                const url = `https://www.googleapis.com/customsearch/v1?q=${query}&cx=${searchEngineId}&searchType=image&key=${apiKey}`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data && data.items && data.items.length > 0) {
+                    const firstImageUrl = data.items[0].link;
+                    imageContainer.innerHTML = ''
+                    imageContainer.style.backgroundImage = `url('${firstImageUrl}')`;
+                } else {
+                    throw (data)
+                }
+            } catch (error) {
+                imageContainer.innerHTML = `<div class="material-symbols-outlined">photo_camera</div>`
+            }
         }
 
         // Enable drawing on the canvas
