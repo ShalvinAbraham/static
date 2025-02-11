@@ -292,7 +292,7 @@
             const selectedLevel = document.getElementById("levelSelect").value;
             const filteredWords = words.filter(word => word.level === selectedLevel);
             currentWord = filteredWords[Math.floor(Math.random() * filteredWords.length)];
-            fetchImage(currentWord.ml)
+            fetchImage(`"${currentWord.meaning} ${currentWord.ml}`)
             drawWordTemplate(currentWord.ml);
             document.getElementById("wordDetails").innerHTML = `<span>Word: <b>${currentWord.ml}</b> <b>::</b> Pronounciation: <b>${currentWord.en}</b> <b>::</b> Meaning: <b>${currentWord.meaning}</b></span>`;
         }
@@ -357,6 +357,7 @@
                 }
             } catch (error) {
                 imageContainer.innerHTML = `<div class="material-symbols-outlined">photo_camera</div>`
+                imageContainer.style.backgroundImage = null;
             }
         }
 
