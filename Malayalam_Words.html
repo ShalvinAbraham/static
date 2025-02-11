@@ -351,10 +351,12 @@
                 const data = await response.json();
 
                 if (data && data.items && data.items.length > 0) {
-                    const firstValidImage = data.items.find(item => isValidImageUrl(item.link));
-                    if (firstValidImage) {
+                    const validImages = data.items.filter(item => isValidImageUrl(item.link));
+
+                    if (validImages.length > 0) {
+                        const randomImage = validImages[Math.floor(Math.random() * validImages.length)];
                         imageContainer.style.display = 'block';
-                        imageContainer.style.backgroundImage = `url('${firstValidImage.link}')`;
+                        imageContainer.style.backgroundImage = `url('${randomImage.link}')`;
                     } else {
                         throw (data)
                     }
