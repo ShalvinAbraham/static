@@ -48,7 +48,10 @@
             </div>
             <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
             <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
-            <button class="material-symbols-outlined" title="Listen" onclick="listen()">brand_awareness</button>
+            <button class="material-symbols-outlined" title="Listen Letter"
+                onclick="listenCurrentLetter()">brand_awareness</button>
+            <button class="material-symbols-outlined" title="Listen All Letters"
+                onclick="listenCurrentLetters()">text_to_speech</button>
             <button class="material-symbols-outlined" title="Random Letter" onclick="randomLetter()">shuffle</button>
             <button id="nextDependantLetter" class="material-symbols-outlined" title="Next dependant letter"
                 onclick="nextDependantLetter()">arrow_forward</button>
@@ -254,9 +257,29 @@
             drawLetterTemplate(currentLetterInTemplate);
         }
 
-        function listen() {
+        function listenCurrentLetter() {
             //window.open(`https://www.google.com/search?q=Pronounce%20Malayalam%20Word%20"${currentLetterInTemplate}"`, '_blank');
             window.open(`https://translate.google.com/?sl=ml&tl=en&text=${currentLetterInTemplate}&op=translate`, '_blank');
+
+        }
+        function listenCurrentLetters() {
+            let letters = [];
+
+            if (currentDependantLetter != '') {
+                letters = currentLetterObj.dependants;
+            } else if (currentLetterObj.subgroup) {
+                letters = letterData.filter(item => item.group === currentLetterObj.subgroup && item.group === currentLetterObj.subgroup);
+            } else {
+                letters = letterData.filter(item => item.group === currentLetterObj.group);
+            }
+
+            let query = letters.filter(item => item.audible !== false).map(item => item.ml).join(",");
+
+            if (query != '') {
+                window.open(`https://translate.google.com/?sl=ml&tl=en&text=${query}&op=translate`, '_blank');
+            } else {
+                toast("Unable to listen current letters !!");
+            }
         }
 
         function nextLetter() {
@@ -401,7 +424,15 @@
             }
         });
 
-        const toast = document.getElementById("toast");
+        const toastDiv = document.getElementById("toast");
+        function toast(message) {
+            toastDiv.classList.add("show");
+            toastDiv.textContent = message
+            setTimeout(() => {
+                toastDiv.classList.remove("show");
+            }, 2000);
+        }
+
         function download() {
             const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
             const file_name = `letter_${currentLetterInTemplate}_${timestamp}.png`;
@@ -411,12 +442,7 @@
                 link.download = file_name;
                 link.click();
             }, "image/png");
-
-            toast.classList.add("show");
-            toast.textContent = "Saved as " + file_name
-            setTimeout(() => {
-                toast.classList.remove("show");
-            }, 2000);
+            toast("Saved as " + file_name)
         }
 
         document.getElementById("showLetterDisplay").addEventListener("change", function () {

@@ -81,7 +81,15 @@
             drawWordTemplate(currentWord.ml);
         }
 
-        const toast = document.getElementById("toast");
+        const toastDiv = document.getElementById("toast");
+        function toast(message) {
+            toastDiv.classList.add("show");
+            toastDiv.textContent = message
+            setTimeout(() => {
+                toastDiv.classList.remove("show");
+            }, 2000);
+        }
+
         function download() {
             const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
             const file_name = `malayalam_word_${currentWord.ml}_${timestamp}.png`;
@@ -92,11 +100,7 @@
                 link.click();
             }, "image/png");
 
-            toast.classList.add("show");
-            toast.textContent = "Saved as " + file_name
-            setTimeout(() => {
-                toast.classList.remove("show");
-            }, 2000);
+            toast("Saved as " + file_name);
         }
 
         function imageSearch() {
