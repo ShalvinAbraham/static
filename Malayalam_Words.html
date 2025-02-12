@@ -6,111 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Malayalam Words</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+    <link rel="stylesheet" href="style.css">
     <script src="data/ml_words.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #FFFAF0;
-            margin: 0;
-            padding: 0;
-        }
-
-        #container {
-            display: box;
-            margin-top: 20px;
-        }
-
-        .header {
-            margin: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .levelSelect {
-            left: 20px;
-            position: absolute;
-            font-size: 19px;
-            padding: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            overflow: hidden;
-            outline: none;
-            background-color: #ffebcd;
-            border: 2px solid #ff6347;
-        }
-
-        .wordDetails {
-            padding: 6px;
-            margin-bottom: 10px;
-            background-color: #ffebcd;
-            border: 2px solid #ff6347;
-        }
-
-        canvas {
-            border: 5px solid #ff6347;
-            background-color: white;
-            border-radius: 10px;
-            touch-action: none;
-        }
-
-        .controls {
-            margin-top: 5px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            bottom: 0px;
-            position: fixed;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .controls>button,
-        .checkbox-div>label {
-            background-color: #ff6347;
-            color: white;
-            font-size: 18px;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .controls>button:hover {
-            background-color: #ff4500;
-        }
-
-        .controls>button:disabled {
-            background-color: #cccccc;
-        }
-
-        .checkbox-div>input {
-            display: none;
-        }
-
-        .fullscreen {
-            width: 35px;
-            height: 37px;
-            right: 20px;
-            padding: 4px;
-            position: absolute;
-            cursor: pointer;
-            z-index: 3;
-            background-color: #ffebcd;
-            border: 2px solid #ff6347;
-            overflow: hidden;
-            outline: none;
-        }
-    </style>
 </head>
 
 <body>
     <div id="container">
         <div class="header">
-            <select id="levelSelect" class="levelSelect" title="Choose a level" onchange="loadRandomWord()"></select>
-            <div id="wordDetails" class="wordDetails"></div>
+            <select id="levelSelect" class="categorySelect" title="Choose a level" onchange="loadRandomWord()"></select>
+            <div id="wordDetails" class="itemDetails"></div>
             <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
         </div>
         <canvas id="tracingCanvas" width="1000" height="350"></canvas>
@@ -129,7 +33,6 @@
     </div>
 
     <script>
-        // Dataset
         const words = data;
         const canvas = document.getElementById("tracingCanvas");
         const ctx = canvas.getContext("2d");

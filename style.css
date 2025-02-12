@@ -1,0 +1,174 @@
+/* Common Styles */
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #FFFAF0;
+    margin: 0;
+    padding: 0;
+}
+
+#container {
+    display: block;
+    margin-top: 20px;
+}
+
+.header {
+    margin: 0px 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.categorySelect {
+    left: 20px;
+    position: absolute;
+    font-size: 19px;
+    padding: 4px 10px;
+    font-weight: bold;
+    cursor: pointer;
+    outline: none;
+    background-color: #ffebcd;
+    border: 2px solid #ff6347;
+}
+
+.itemDetails {
+    padding: 5px;
+    margin-bottom: 10px;
+    background-color: #ffebcd;
+    border: 2px solid #ff6347;
+}
+
+canvas {
+    border: 5px solid #ff6347;
+    background-color: white;
+    border-radius: 10px;
+    touch-action: none;
+}
+
+.controls {
+    margin-top: 5px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    bottom: 0px;
+    position: fixed;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.controls>button,
+.checkbox-div>label {
+    background-color: #ff6347;
+    color: white;
+    font-size: 18px;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.controls>button:hover {
+    background-color: #ff4500;
+}
+
+.controls>button:disabled {
+    background-color: #cccccc;
+}
+
+.checkbox-div>input {
+    display: none;
+}
+
+.checkbox-div>input:checked+label {
+    background-color: #b36301;
+}
+
+.fullscreen {
+    width: 35px;
+    height: 35px;
+    right: 20px;
+    padding: 4px;
+    position: absolute;
+    cursor: pointer;
+    z-index: 3;
+    background-color: #ffebcd;
+    border: 2px solid #ff6347;
+    overflow: hidden;
+    outline: none;
+}
+
+/* Letter Tracing Specific Styles */
+.top {
+    height: 200px;
+    overflow: hidden;
+}
+
+.sub-group-container {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 0px 10px;
+    border-radius: 8px;
+    background-color: blanchedalmond;
+    justify-content: center;
+}
+
+@font-face {
+    font-family: 'Nupuram Arrows';
+    src: url('fonts/NupuramArrows.woff2') format('woff2')
+}
+
+.font-preload {
+    position: absolute;
+    visibility: hidden;
+    font-family: 'Nupuram Arrows';
+}
+
+.letter-option {
+    font-size: 22px;
+    cursor: pointer;
+    display: inline-block;
+    padding: 0px 10px;
+    height: 30px;
+    border: 2px solid #ff6347;
+    border-radius: 8px;
+    background-color: #ffebcd;
+    transition: background-color 0.3s ease;
+}
+
+.letter-option:hover {
+    background-color: #ff6347;
+    color: white;
+}
+
+.letter-select-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.dependant-letter-container {
+    display: none;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px;
+}
+
+.dependant-letter-option {
+    font-size: 22px;
+    cursor: pointer;
+    display: inline-block;
+    padding: 0px 9px;
+    height: 30px;
+    border: 2px solid #ff6347;
+    border-radius: 8px;
+    background-color: aquamarine;
+    transition: background-color 0.3s ease;
+}
+
+.dependant-letter-option:hover {
+    background-color: #ff6347;
+    color: white;
+}
