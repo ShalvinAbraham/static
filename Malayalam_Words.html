@@ -30,6 +30,7 @@
             <button class="material-symbols-outlined" onclick="loadRandomWord()"
                 title="New Word">&nbsp;&nbsp;&nbsp;shuffle&nbsp;&nbsp;&nbsp;</button>
         </div>
+        <div id="toast" class="toast"></div>
     </div>
 
     <script>
@@ -58,7 +59,6 @@
             loadRandomWord();
         }
 
-        // Function to load a random word
         function loadRandomWord() {
             const selectedLevel = document.getElementById("levelSelect").value;
             const filteredWords = words.filter(word => word.level === selectedLevel);
@@ -67,7 +67,6 @@
             document.getElementById("wordDetails").innerHTML = `<span>Word: <b>${currentWord.ml}</b> <b>::</b> Pronounciation: <b>${currentWord.en}</b> <b>::</b> Meaning: <b>${currentWord.meaning}</b></span>`;
         }
 
-        // Function to draw the word on the canvas
         function drawWordTemplate(word) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
@@ -77,21 +76,27 @@
             ctx.fillText(word, canvas.width / 2, canvas.height / 2);
         }
 
-        // Function to clear the canvas
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawWordTemplate(currentWord.ml);
         }
 
-        // Function to download the canvas drawing
+        const toast = document.getElementById("toast");
         function download() {
             const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
+            const file_name = `malayalam_word_${currentWord.ml}_${timestamp}.png`;
             canvas.toBlob(function (blob) {
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = `malayalam_word_${currentWord.ml}_${timestamp}.png`;
+                link.download = file_name;
                 link.click();
             }, "image/png");
+
+            toast.classList.add("show");
+            toast.textContent = "Saved as " + file_name
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 2000);
         }
 
         function imageSearch() {
@@ -100,7 +105,7 @@
 
         function listen() {
             //window.open(`https://www.google.com/search?q=Pronounce%20Malayalam%20Word%20"${currentWord.ml}"`, '_blank');
-            window.open(`https://translate.google.com/?sl=auto&tl=en&text=${currentWord.ml}&op=translate`, '_blank');
+            window.open(`https://translate.google.com/?sl=ml&tl=en&text=${currentWord.ml}&op=translate`, '_blank');
         }
 
         document.getElementById("showWordDetails").addEventListener("change", function () {

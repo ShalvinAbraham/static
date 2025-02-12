@@ -3,6 +3,72 @@ const data = [
         "ml": "അ",
         "en": "a",
         "group": "Vowels",
+        "dependants":[    {    
+            "ml": "് ",
+            "en": "a - അ",
+            "group": "Vowel signs",
+        },
+        {
+            "ml": "ാ ",
+            "en": "aa - ആ",
+            "group": "Vowel signs",
+        },
+        {
+            "ml": "ി ",
+            "en": "i - ഇ",
+            "group": "Vowel signs",
+        },
+        {
+            "ml": "ീ ",
+            "en": "ii - ഈ",
+            "group": "Vowel signs",
+        },
+        {
+            "ml": "ു ",
+            "en": "u - ഉ",
+            "group": "Vowel signs",
+        },
+        {
+            "ml": "ൂ ",
+            "en": "uu - ഊ",
+            "group": "Vowel signs",
+        },
+        {
+            "ml": "ൃ ",
+            "en": "ru - ഋ",
+        },
+        {
+            "ml": "െ ",
+            "en": "a - എ",
+        },
+        {
+            "ml": "േ ",
+            "en": "ee - ഏ",
+        },
+        {
+            "ml": "ൈ ",
+            "en": "ai - ഐ",
+        },
+        {
+            "ml": "ൊ ",
+            "en": "o - ഒ",
+        },
+        {
+            "ml": "ോ ",
+            "en": "oo - ഓ",
+        },
+        {
+            "ml": "ൌ ",
+            "en": "au - ഔ",
+        },
+        {
+            "ml": "ം ",
+            "en": "am - അം",
+        },    {
+            "ml": "ഃ ",
+            "en": "ah - അഃ",
+            }
+        ],
         "examples": [
             { "en": "amma", "ml": "അമ്മ", "en-meaning": "Mother" },
             { "en": "akam", "ml": "അകം", "en-meaning": "Inside" }

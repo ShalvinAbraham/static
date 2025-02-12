@@ -43,7 +43,7 @@
                 <label class="material-symbols-outlined" for="showDependantLetterDisplay">expand_circle_down</label>
             </div>
             <div class="checkbox-div" title="Writing Direction">
-                <input type="checkbox" id="writingDirection" checked>
+                <input type="checkbox" id="writingDirection">
                 <label class="material-symbols-outlined" for="writingDirection">near_me</label>
             </div>
             <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
@@ -57,6 +57,7 @@
             <button id="nextCategory" class="material-symbols-outlined" title="Next letter category"
                 onclick="nextCategory()">skip_next</button>
         </div>
+        <div id="toast" class="toast"></div>
     </div>
 
     <script>
@@ -255,7 +256,7 @@
 
         function listen() {
             //window.open(`https://www.google.com/search?q=Pronounce%20Malayalam%20Word%20"${currentLetterInTemplate}"`, '_blank');
-            window.open(`https://translate.google.com/?sl=auto&tl=en&text=${currentLetterInTemplate}&op=translate`, '_blank');
+            window.open(`https://translate.google.com/?sl=ml&tl=en&text=${currentLetterInTemplate}&op=translate`, '_blank');
         }
 
         function nextLetter() {
@@ -400,14 +401,22 @@
             }
         });
 
+        const toast = document.getElementById("toast");
         function download() {
             const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
+            const file_name = `letter_${currentLetterInTemplate}_${timestamp}.png`;
             canvas.toBlob(function (blob) {
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = `letter_${currentLetterInTemplate}_${timestamp}.png`;
+                link.download = file_name;
                 link.click();
             }, "image/png");
+
+            toast.classList.add("show");
+            toast.textContent = "Saved as " + file_name
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 2000);
         }
 
         document.getElementById("showLetterDisplay").addEventListener("change", function () {
