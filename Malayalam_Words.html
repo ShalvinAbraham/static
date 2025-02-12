@@ -23,6 +23,8 @@
         .header {
             margin: 20px;
             margin-bottom: 0px;
+            height: 40px;
+            margin-bottom: 20px;
             display: flex;
             flex-direction: column;
         }
@@ -31,16 +33,14 @@
             left: 20px;
             position: absolute;
             font-size: 19px;
-            padding: 7px;
+            padding: 5px;
             font-weight: bold;
-            margin-bottom: 10px;
             cursor: pointer;
-            background-color: transparent;
-            background-repeat: no-repeat;
             border: none;
-            border-right: 2px solid #ff6347;
             overflow: hidden;
             outline: none;
+            background-color: #ffebcd;
+            border: 2px solid #ff6347;
         }
 
         .wordDetails {
@@ -83,41 +83,22 @@
             background-color: #cccccc;
         }
 
+        .checkbox-div>input {
+            display: none;
+        }
+
         .fullscreen {
             width: 35px;
-            height: 35px;
+            height: 37px;
             right: 20px;
-            padding: 2px;
+            padding: 4px;
             position: absolute;
             cursor: pointer;
             z-index: 3;
-            background-color: transparent;
-            background-repeat: no-repeat;
-            border: none;
-            border-left: 2px solid #ff6347;
+            background-color: #ffebcd;
+            border: 2px solid #ff6347;
             overflow: hidden;
             outline: none;
-        }
-
-        .middle {
-            margin: auto;
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            overflow: scroll;
-        }
-
-        .imageContainer {
-            width: 500px;
-            height: 500px;
-            padding: 5px;
-            background-size: cover;
-            background-position: center;
-            margin: 0px 10px;
-            border: 5px solid #ff6347;
-            border-radius: 10px;
-            display: none;
-            background-size: 100% 100%;
         }
     </style>
 </head>
@@ -129,15 +110,16 @@
             <div id="wordDetails" class="wordDetails"></div>
             <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
         </div>
-        <div class="middle">
-            <canvas id="tracingCanvas" width="1000" height="500"></canvas>
-            <div id="imageContainer" class="imageContainer"></div>
-        </div>
+        <canvas id="tracingCanvas" width="1000" height="500"></canvas>
         <div class="controls">
             <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
             <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
             <button class="material-symbols-outlined" title="Help" onclick="imageSearch()">photo_camera</button>
             <button class="material-symbols-outlined" title="Listen" onclick="listen()">brand_awareness</button>
+            <div class="checkbox-div" title="Toggle word details">
+                <input type="checkbox" id="showWordDetails" checked>
+                <label class="material-symbols-outlined" for="showWordDetails">explore_off</label>
+            </div>
             <button class="material-symbols-outlined" onclick="loadRandomWord()"
                 title="New Word">&nbsp;&nbsp;&nbsp;shuffle&nbsp;&nbsp;&nbsp;</button>
         </div>
@@ -295,7 +277,6 @@
             const selectedLevel = document.getElementById("levelSelect").value;
             const filteredWords = words.filter(word => word.level === selectedLevel);
             currentWord = filteredWords[Math.floor(Math.random() * filteredWords.length)];
-            fetchImage(`"${currentWord.meaning}"`)
             drawWordTemplate(currentWord.ml);
             document.getElementById("wordDetails").innerHTML = `<span>Word: <b>${currentWord.ml}</b> <b>::</b> Pronounciation: <b>${currentWord.en}</b> <b>::</b> Meaning: <b>${currentWord.meaning}</b></span>`;
         }
@@ -335,47 +316,9 @@
             window.open(`https://www.google.com/search?q=Pronounce%20Malayalam%20Word%20"${currentWord.ml}"`, '_blank');
         }
 
-        const apiKey = "AIzaSyAadS7ye759yzi6RRdTqck9Czn5I_sxkbg";
-        const searchEngineId = "f20ea363844504509";
-        const imageContainer = document.getElementById("imageContainer");
-
-        async function fetchImage(word) {
-            const query = word.trim();
-            if (!query) {
-                return;
-            }
-
-            try {
-                const url = `https://www.googleapis.com/customsearch/v1?q=${query}&cx=${searchEngineId}&searchType=image&key=${apiKey}`;
-
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data && data.items && data.items.length > 0) {
-                    const validImages = data.items.filter(item => isValidImageUrl(item.link));
-
-                    if (validImages.length > 0) {
-                        const randomImage = validImages[Math.floor(Math.random() * validImages.length)];
-                        imageContainer.style.display = 'block';
-                        imageContainer.style.backgroundImage = `url('${randomImage.link}')`;
-                    } else {
-                        throw (data)
-                    }
-                } else {
-                    throw (data)
-                }
-            } catch (error) {
-                imageContainer.style.display = 'none';
-            }
-        }
-
-        const validImageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"];
-
-        function isValidImageUrl(url) {
-            const isImage = validImageExtensions.some(ext => url.toLowerCase().endsWith(ext));
-            const hasNoQueryParams = !url.includes("?");
-            return isImage && hasNoQueryParams;
-        }
+        document.getElementById("showWordDetails").addEventListener("change", function () {
+            document.getElementById("wordDetails").style.display = this.checked ? "block" : "none";
+        });
 
         // Enable drawing on the canvas
         let drawing = false;
