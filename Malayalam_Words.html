@@ -23,8 +23,6 @@
 
         .header {
             margin: 20px;
-            margin-bottom: 0px;
-            height: 40px;
             margin-bottom: 20px;
             display: flex;
             flex-direction: column;
@@ -63,6 +61,10 @@
             display: flex;
             justify-content: center;
             gap: 15px;
+            bottom: 0px;
+            position: fixed;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .controls>button,
@@ -111,7 +113,7 @@
             <div id="wordDetails" class="wordDetails"></div>
             <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
         </div>
-        <canvas id="tracingCanvas" width="1000" height="500"></canvas>
+        <canvas id="tracingCanvas" width="1000" height="350"></canvas>
         <div class="controls">
             <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
             <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
