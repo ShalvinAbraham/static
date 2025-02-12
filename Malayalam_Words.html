@@ -99,7 +99,8 @@
         }
 
         function listen() {
-            window.open(`https://www.google.com/search?q=Pronounce%20Malayalam%20Word%20"${currentWord.ml}"`, '_blank');
+            //window.open(`https://www.google.com/search?q=Pronounce%20Malayalam%20Word%20"${currentWord.ml}"`, '_blank');
+            window.open(`https://translate.google.com/?sl=auto&tl=en&text=${currentWord.ml}&op=translate`, '_blank');
         }
 
         document.getElementById("showWordDetails").addEventListener("change", function () {

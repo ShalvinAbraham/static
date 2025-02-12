@@ -10,7 +10,8 @@ body {
 
 #container {
     display: block;
-    margin-top: 20px;
+    margin: 20px;
+    padding-bottom: 50px;
 }
 
 .header {
@@ -46,10 +47,9 @@ canvas {
 }
 
 .controls {
-    margin-top: 5px;
     display: flex;
     justify-content: center;
-    gap: 15px;
+    gap: 10px;
     bottom: 0px;
     position: fixed;
     left: 50%;

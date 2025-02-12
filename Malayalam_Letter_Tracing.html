@@ -48,7 +48,7 @@
             </div>
             <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
             <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
-            <button class="material-symbols-outlined" title="Learn more" onclick="learn()">contact_support</button>
+            <button class="material-symbols-outlined" title="Listen" onclick="listen()">brand_awareness</button>
             <button class="material-symbols-outlined" title="Random Letter" onclick="randomLetter()">shuffle</button>
             <button id="nextDependantLetter" class="material-symbols-outlined" title="Next dependant letter"
                 onclick="nextDependantLetter()">arrow_forward</button>
@@ -253,8 +253,9 @@
             drawLetterTemplate(currentLetterInTemplate);
         }
 
-        function learn() {
-            window.open(`https://www.google.com/search?q="Malayalam%20Letter"%20"${currentLetterInTemplate}"`, '_blank');
+        function listen() {
+            //window.open(`https://www.google.com/search?q=Pronounce%20Malayalam%20Word%20"${currentLetterInTemplate}"`, '_blank');
+            window.open(`https://translate.google.com/?sl=auto&tl=en&text=${currentLetterInTemplate}&op=translate`, '_blank');
         }
 
         function nextLetter() {
