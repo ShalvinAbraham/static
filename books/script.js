@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const stopBtn = document.getElementById("stop-btn");
     const pauseBtn = document.getElementById("pause-btn");
     const resumeBtn = document.getElementById("resume-btn");
+    const toastDiv = document.getElementById("toast");
 
     let utterance = null;
     let currentStoryContent = null;
@@ -231,7 +232,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             setTimeout(() => {
                 currentStoryContent.dispatchEvent(touchEndEvent);
-            }, 500);
+            }, 1000);
+
+            toast("Touch and Hold to get 'Read Aloud' Menu Option");
         }
     });
 
@@ -242,4 +245,12 @@ document.addEventListener("DOMContentLoaded", () => {
             readStory();
         }
     });
+
+    function toast(message) {
+        toastDiv.classList.add("show");
+        toastDiv.textContent = message
+        setTimeout(() => {
+            toastDiv.classList.remove("show");
+        }, 2000);
+    }
 });
