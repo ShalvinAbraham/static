@@ -161,6 +161,8 @@ body {
     transform: translateX(-50%);
     opacity: 0;
     transition: opacity 1s, visibility 1s;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: small;
   }
   
   .toast.show {

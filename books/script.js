@@ -205,24 +205,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Add event listener to Select Text button
     selectBtn.addEventListener("click", () => {
         if (currentStoryContent) {
-            const rect = currentStoryContent.getBoundingClientRect();
-            const x = rect.left + rect.width / 2;
-            const y = rect.top + rect.height / 2;
-
-            const touchStartEvent = new TouchEvent('touchstart', {
-                bubbles: true,
-                cancelable: true,
-                touches: [new Touch({ identifier: 1, target: currentStoryContent, clientX: x, clientY: y })],
-            });
-
-            const touchEndEvent = new TouchEvent('touchend', {
-                bubbles: true,
-                cancelable: true,
-                changedTouches: [new Touch({ identifier: 1, target: currentStoryContent, clientX: x, clientY: y })],
-            });
-
-            currentStoryContent.dispatchEvent(touchStartEvent);
-
             const range = document.createRange();
             range.selectNodeContents(currentStoryContent);
 
@@ -230,11 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
             selection.removeAllRanges();
             selection.addRange(range);
 
-            setTimeout(() => {
-                currentStoryContent.dispatchEvent(touchEndEvent);
-            }, 1000);
-
-            toast("Touch and Hold to get 'Read Aloud' Menu Option");
+            toast('Touch and Hold, then choose "Read Aloud"');
         }
     });
 
