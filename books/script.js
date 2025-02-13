@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const content = document.getElementById("content");
+    const selectBtn = document.getElementById("select-btn");
     const readAloudBtn = document.getElementById("read-aloud-btn");
     const stopBtn = document.getElementById("stop-btn");
     const pauseBtn = document.getElementById("pause-btn");
@@ -111,6 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         readAloudBtn.disabled = isOpen;
+        selectBtn.disabled = isOpen;
 
         // Open the selected story
         if (!isOpen) {
@@ -194,15 +196,39 @@ document.addEventListener("DOMContentLoaded", () => {
             resumeBtn.disabled = true;
             stopBtn.disabled = true;
             readAloudBtn.disabled = false;
+            selectBtn.disabled = false;
             currentStoryContent.innerHTML = currentStoryHTML
+        }
+    });
+
+    // Add event listener to Select Text button
+    selectBtn.addEventListener("click", () => {
+        if (currentStoryContent) {
+            const range = document.createRange();
+            range.selectNodeContents(currentStoryContent);
+
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            const event = new MouseEvent('contextmenu', {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                clientX: currentStoryContent.getBoundingClientRect().left,
+                clientY: currentStoryContent.getBoundingClientRect().top
+            });
+
+            // Dispatch the event to the div
+            currentStoryContent.dispatchEvent(event);
         }
     });
 
     // Add event listener to Read Aloud button
     readAloudBtn.addEventListener("click", () => {
         if (currentStoryContent) {
-            readStory();
             readAloudBtn.disabled = true;
+            readStory();
         }
     });
 });
