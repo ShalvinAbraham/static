@@ -204,6 +204,24 @@ document.addEventListener("DOMContentLoaded", () => {
     // Add event listener to Select Text button
     selectBtn.addEventListener("click", () => {
         if (currentStoryContent) {
+            const rect = currentStoryContent.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+
+            const touchStartEvent = new TouchEvent('touchstart', {
+                bubbles: true,
+                cancelable: true,
+                touches: [new Touch({ identifier: 1, target: currentStoryContent, clientX: x, clientY: y })],
+            });
+
+            const touchEndEvent = new TouchEvent('touchend', {
+                bubbles: true,
+                cancelable: true,
+                changedTouches: [new Touch({ identifier: 1, target: currentStoryContent, clientX: x, clientY: y })],
+            });
+
+            currentStoryContent.dispatchEvent(touchStartEvent);
+
             const range = document.createRange();
             range.selectNodeContents(currentStoryContent);
 
@@ -211,16 +229,9 @@ document.addEventListener("DOMContentLoaded", () => {
             selection.removeAllRanges();
             selection.addRange(range);
 
-            const event = new MouseEvent('contextmenu', {
-                bubbles: true,
-                cancelable: true,
-                view: window,
-                clientX: currentStoryContent.getBoundingClientRect().left,
-                clientY: currentStoryContent.getBoundingClientRect().top
-            });
-
-            // Dispatch the event to the div
-            currentStoryContent.dispatchEvent(event);
+            setTimeout(() => {
+                currentStoryContent.dispatchEvent(touchEndEvent);
+            }, 500);
         }
     });
 
