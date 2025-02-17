@@ -197,7 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
             resumeBtn.disabled = true;
             stopBtn.disabled = true;
             readAloudBtn.disabled = false;
-            selectBtn.disabled = false;
             currentStoryContent.innerHTML = currentStoryHTML
         }
     });

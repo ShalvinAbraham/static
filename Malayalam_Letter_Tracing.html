@@ -169,11 +169,11 @@
         }
 
         function generateLetterDetails(letterObj) {
-            let detailsHtml = `<span><b>${letterObj.ml}</b> : '${letterObj.en}'</span>`;
+            let detailsHtml = `<span><b>${letterObj.ml}</b></span>`;
 
             if (letterObj.examples) {
                 const examples = letterObj.examples
-                    .map(example => `<b>${example.ml}</b> [${example.en} - ${example["en-meaning"]}]`)
+                    .map(example => `<b>${example.ml}</b> [${example["en-meaning"]}]`)
                     .join("; ");
 
                 detailsHtml += `<span> :: ${examples}</span>`;
