@@ -46,6 +46,8 @@
                 <input type="checkbox" id="writingDirection">
                 <label class="material-symbols-outlined" for="writingDirection">near_me</label>
             </div>
+            <button class="material-symbols-outlined" onclick="emptyCanvas()"
+                title="Empty Canvas">check_box_outline_blank</button>
             <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
             <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
             <button class="material-symbols-outlined" title="Listen Letter"
@@ -152,7 +154,6 @@
             currentLetterObj = letterObj;
 
             drawLetterTemplate(currentLetter);
-            clearCanvas();
 
             const currentCategoryLetters = letterData.filter(item => item.group === letterObj.group);
             const currentIndex = currentCategoryLetters.findIndex(item => item.ml === currentLetter);
@@ -195,7 +196,6 @@
         }
 
         function changeDependantLetter(dependantObj) {
-            clearCanvas();
             currentDependantLetter = dependantObj.ml;
             drawLetterTemplate(currentDependantLetter);
             generateLetterDetails(dependantObj);
@@ -207,7 +207,7 @@
 
         const writingDirection = document.getElementById('writingDirection');
         writingDirection.addEventListener('change', function () {
-            clearCanvas();
+            drawLetterTemplate(currentLetterInTemplate);
         });
 
         function highlightLetter(letter) {
@@ -253,8 +253,11 @@
         }
 
         function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawLetterTemplate(currentLetterInTemplate);
+        }
+
+        function emptyCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
         function listenCurrentLetter() {
