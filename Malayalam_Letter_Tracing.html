@@ -18,7 +18,8 @@
                 <select id="categorySelect" class="categorySelect" title="Choose a letter category"
                     onchange="loadLetters()"></select>
                 <div id="letterDetails" class="itemDetails"> </div>
-                <button class="fullscreen material-symbols-outlined" id="fullscreen">fullscreen</button>
+                <button class="fullscreen material-symbols-outlined" title="Toggle Fullscreen"
+                    id="fullscreen">fullscreen</button>
             </div>
 
             <div id="letterDisplay">
@@ -27,40 +28,44 @@
             </div>
         </div>
         <canvas id="tracingCanvas" width="800" height="400"></canvas>
-        <div class="controls">
-            <button id="previousCategory" class="material-symbols-outlined" title="Previous letter category"
-                onclick="previousCategory()">skip_previous</button>
-            <button class="material-symbols-outlined" id="previousLetter" title="Previous letter"
-                onclick="previousLetter()">keyboard_tab_rtl</button>
-            <button class="material-symbols-outlined" id="previousDependantLetter" title="Previous dependant letter"
-                onclick="previousDependantLetter()">arrow_back</button>
-            <div class="checkbox-div" title="Toggle letter display">
-                <input type="checkbox" id="showLetterDisplay" checked>
-                <label class="material-symbols-outlined" for="showLetterDisplay">explore_off</label>
-            </div>
-            <div class="checkbox-div" title="Toggle dependant letter display">
-                <input type="checkbox" id="showDependantLetterDisplay">
-                <label class="material-symbols-outlined" for="showDependantLetterDisplay">expand_circle_down</label>
-            </div>
-            <div class="checkbox-div" title="Writing Direction">
-                <input type="checkbox" id="writingDirection">
-                <label class="material-symbols-outlined" for="writingDirection">near_me</label>
-            </div>
+        <div class="controls-container">
             <button class="material-symbols-outlined" onclick="emptyCanvas()"
                 title="Empty Canvas">check_box_outline_blank</button>
-            <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
-            <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
-            <button class="material-symbols-outlined" title="Listen Letter"
-                onclick="listenCurrentLetter()">brand_awareness</button>
-            <button class="material-symbols-outlined" title="Listen All Letters"
-                onclick="listenCurrentLetters()">text_to_speech</button>
             <button class="material-symbols-outlined" title="Random Letter" onclick="randomLetter()">shuffle</button>
-            <button id="nextDependantLetter" class="material-symbols-outlined" title="Next dependant letter"
-                onclick="nextDependantLetter()">arrow_forward</button>
             <button id="nextLetter" class="material-symbols-outlined" title="Next letter"
                 onclick="nextLetter()">keyboard_tab</button>
-            <button id="nextCategory" class="material-symbols-outlined" title="Next letter category"
-                onclick="nextCategory()">skip_next</button>
+            <button id="toggleMenu" class="material-symbols-outlined" title="Expand menu">expand_more</button>
+
+            <div id="controlsPopup" class="controls-popup">
+                <div class="checkbox-div" title="Letters">
+                    <input type="checkbox" id="showLetterDisplay" checked>
+                    <label class="material-symbols-outlined" for="showLetterDisplay">explore_off</label>
+                </div>
+                <div class="checkbox-div" title="Writing Direction">
+                    <input type="checkbox" id="writingDirection">
+                    <label class="material-symbols-outlined" for="writingDirection">near_me</label>
+                </div>
+                <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
+                <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
+                <button class="material-symbols-outlined" title="Listen Letter"
+                    onclick="listenCurrentLetter()">brand_awareness</button>
+                <button class="material-symbols-outlined" title="Listen All Letters"
+                    onclick="listenCurrentLetters()">text_to_speech</button>
+                <div class="checkbox-div" title="Dependant Letters">
+                    <input type="checkbox" id="showDependantLetterDisplay">
+                    <label class="material-symbols-outlined" for="showDependantLetterDisplay">expand_circle_down</label>
+                </div>
+                <button id="nextDependantLetter" class="material-symbols-outlined" title="Next Dependant Letter"
+                    onclick="nextDependantLetter()">arrow_forward</button>
+                <button class="material-symbols-outlined" id="previousDependantLetter" title="Previous Dependant Letter"
+                    onclick="previousDependantLetter()">arrow_back</button>
+                <button class="material-symbols-outlined" id="previousLetter" title="Previous letter"
+                    onclick="previousLetter()">keyboard_tab_rtl</button>
+                <button id="nextCategory" class="material-symbols-outlined" title="Next Letter Category"
+                    onclick="nextCategory()">skip_next</button>
+                <button id="previousCategory" class="material-symbols-outlined" title="Previous Letter Category"
+                    onclick="previousCategory()">skip_previous</button>
+            </div>
         </div>
         <div id="toast" class="toast"></div>
     </div>
@@ -458,7 +463,54 @@
             document.getElementById("dependantLetters").style.display = this.checked ? "flex" : "none";
         });
 
-        window.onload = loadCategories;
+        const toggleButton = document.getElementById('toggleMenu');
+        const controlsPopup = document.getElementById('controlsPopup');
+
+        // Function to add labels
+        function addLabels() {
+            const controls = controlsPopup.querySelectorAll('button');
+            controls.forEach(control => {
+                const title = control.getAttribute('title');
+                if (title) {
+                    const label = document.createElement('span');
+                    label.className = 'label';
+                    label.textContent = title;
+                    control.appendChild(label);
+                }
+            });
+
+            const chkcontrols = controlsPopup.querySelectorAll('.checkbox-div');
+            chkcontrols.forEach(control => {
+                const title = control.getAttribute('title');
+                if (title) {
+                    const label = document.createElement('span');
+                    label.className = 'label';
+                    label.textContent = title;
+                    control.querySelector('label').appendChild(label);
+                }
+            });
+        }
+
+        // Toggle the menu
+        toggleButton.addEventListener('click', function () {
+            controlsPopup.classList.toggle('expanded');
+            toggleButton.textContent = controlsPopup.classList.contains('expanded') ? 'close' : 'expand_more';
+        });
+
+        // Collapse the menu when a control is clicked
+        controlsPopup.querySelectorAll('button, .checkbox-div').forEach(control => {
+            control.addEventListener('click', function () {
+                controlsPopup.classList.remove('expanded');
+                toggleButton.textContent = 'expand_more';
+            });
+        });
+
+        function init() {
+            loadCategories();
+            addLabels();
+        }
+
+        window.onload = init;
     </script>
 </body>
 

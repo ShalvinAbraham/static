@@ -1367,10 +1367,5 @@ const data = [
         examples: [
             { en: "kshama", ml: "ക്ഷമ", "en-meaning": "Forgiveness" }
         ]
-    },
-    {
-        ml: "",
-        en: "",
-        group: "Empty"
     }
 ];

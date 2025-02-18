@@ -119,7 +119,7 @@ canvas {
     opacity: 1;
   }
 
-/* Letter Tracing Specific Styles */
+/* Letter Tracing Page Specific Styles */
 .top {
     height: 200px;
     overflow: hidden;
@@ -193,4 +193,110 @@ canvas {
 .dependant-letter-option:hover {
     background-color: #ff6347;
     color: white;
+}
+
+.controls-container {
+    position: fixed;
+    top: 65px;
+    right: 20px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.controls-container>button {
+    background-color: #ff6347;
+    color: white;
+    font-size: medium;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.controls-container>button:hover {
+    background-color: #ff4500;
+}
+
+.controls-popup {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-height: 80%;
+    overflow-y: auto;
+    position: fixed;
+    top: 80px;
+    right: 80px;
+    transform: rotateY(180deg);
+}
+
+.controls-popup.expanded {
+    display: flex;
+}
+
+.controls-popup button,
+.checkbox-div>label {
+    background-color: #ff6347;
+    color: white;
+    font-size: 30px;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transform: rotateY(180deg);
+}
+
+.controls-popup button:hover,
+.checkbox-div>label:hover {
+    background-color: #ff4500;
+}
+
+.controls-popup button:disabled {
+    background-color: #cccccc;
+}
+
+.checkbox-div>input {
+    display: none;
+}
+
+.checkbox-div>input:checked+label {
+    background-color: #ea933c;
+}
+
+/* Custom scrollbar for the popup menu */
+.controls-popup::-webkit-scrollbar {
+    width: 10px; /* Width of the scrollbar */
+}
+
+.controls-popup::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Track color */
+    border-radius: 4px;
+}
+
+.controls-popup::-webkit-scrollbar-thumb {
+    background: #888; /* Thumb color */
+    border-radius: 4px;
+}
+
+.controls-popup::-webkit-scrollbar-thumb:hover {
+    background: #555; /* Thumb color on hover */
+}
+
+.label {
+    font-family: Arial, sans-serif;
+    font-size: small;
+    padding-left: 10px;
 }
