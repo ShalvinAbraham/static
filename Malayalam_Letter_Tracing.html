@@ -32,9 +32,9 @@
             <button class="material-symbols-outlined" onclick="emptyCanvas()"
                 title="Empty Canvas">check_box_outline_blank</button>
             <button class="material-symbols-outlined" title="Random Letter" onclick="randomLetter()">shuffle</button>
-            <button id="nextLetter" class="material-symbols-outlined" title="Next letter"
-                onclick="nextLetter()">keyboard_tab</button>
-            <button id="toggleMenu" class="material-symbols-outlined" title="Expand menu">expand_more</button>
+
+            <button id="toggleMenu" class="material-symbols-outlined"
+                title="Expand menu">keyboard_double_arrow_left</button>
 
             <div id="controlsPopup" class="controls-popup">
                 <div class="checkbox-div" title="Letters">
@@ -45,20 +45,22 @@
                     <input type="checkbox" id="writingDirection">
                     <label class="material-symbols-outlined" for="writingDirection">near_me</label>
                 </div>
+                <div class="checkbox-div" title="Dependant Letters">
+                    <input type="checkbox" id="showDependantLetterDisplay">
+                    <label class="material-symbols-outlined" for="showDependantLetterDisplay">expand_circle_down</label>
+                </div>
                 <button class="material-symbols-outlined" onclick="clearCanvas()" title="Clear">mop</button>
                 <button class="material-symbols-outlined" title="Download" onclick="download()">download</button>
                 <button class="material-symbols-outlined" title="Listen Letter"
                     onclick="listenCurrentLetter()">brand_awareness</button>
                 <button class="material-symbols-outlined" title="Listen All Letters"
                     onclick="listenCurrentLetters()">text_to_speech</button>
-                <div class="checkbox-div" title="Dependant Letters">
-                    <input type="checkbox" id="showDependantLetterDisplay">
-                    <label class="material-symbols-outlined" for="showDependantLetterDisplay">expand_circle_down</label>
-                </div>
                 <button id="nextDependantLetter" class="material-symbols-outlined" title="Next Dependant Letter"
                     onclick="nextDependantLetter()">arrow_forward</button>
                 <button class="material-symbols-outlined" id="previousDependantLetter" title="Previous Dependant Letter"
                     onclick="previousDependantLetter()">arrow_back</button>
+                <button id="nextLetter" class="material-symbols-outlined" title="Next letter"
+                    onclick="nextLetter()">keyboard_tab</button>
                 <button class="material-symbols-outlined" id="previousLetter" title="Previous letter"
                     onclick="previousLetter()">keyboard_tab_rtl</button>
                 <button id="nextCategory" class="material-symbols-outlined" title="Next Letter Category"
@@ -494,16 +496,16 @@
         // Toggle the menu
         toggleButton.addEventListener('click', function () {
             controlsPopup.classList.toggle('expanded');
-            toggleButton.textContent = controlsPopup.classList.contains('expanded') ? 'close' : 'expand_more';
+            toggleButton.textContent = 'keyboard_double_arrow_' + (controlsPopup.classList.contains('expanded') ? 'right' : 'left');
         });
 
-        // Collapse the menu when a control is clicked
-        controlsPopup.querySelectorAll('button, .checkbox-div').forEach(control => {
-            control.addEventListener('click', function () {
-                controlsPopup.classList.remove('expanded');
-                toggleButton.textContent = 'expand_more';
-            });
-        });
+        // // Collapse the menu when a control is clicked
+        // controlsPopup.querySelectorAll('button, .checkbox-div').forEach(control => {
+        //     control.addEventListener('click', function () {
+        //         controlsPopup.classList.remove('expanded');
+        //         toggleButton.textContent = 'expand_more';
+        //     });
+        // });
 
         function init() {
             loadCategories();
