@@ -4,60 +4,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Projects</title>
+    <title>My Fun Projects</title>
+    <link rel="icon"
+        href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgZmlsbD0iI2ZmYzEwMCI+PHBhdGggZD0iTTY0IDExLjJMMzguOCA0OC44bC00Mi4yIDYuMWMtNy43IDEuMS0xMC44IDEwLjUtNS4yIDE2bDMwLjUgMjkuNy03LjIgNDIuMWMtMS4zIDcuNiA2LjcgMTMuMyAxMy42IDkuOWwzNy44LTE5LjggMzcuOCAxOS44YzYuOSAzLjQgMTQuOS0yLjMgMTMuNi05LjlsLTcuMi00Mi4xIDMwLjUtMjkuN2M1LjYtNS41IDIuNS0xNC45LTUuMi0xNmwtNDIuMi02LjFMNjQgMTEuMnptMCAyNi4zbDE4LjkgMzguMyA0Mi4yIDYuMS0zMC41IDI5LjcgNy4yIDQyLjEtMzcuOC0xOS44LTM3LjggMTkuOCA3LjItNDIuMUwyLjkgODEuOWw0Mi4yLTYuMUw2NCAzNy41eiIvPjwvc3ZnPg=="
+        type="image/svg+xml">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Comic Neue', cursive;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #FF6B6B, #FFD166, #06D6A0, #118AB2, #EF476F);
+            background-size: 400% 400%;
+            animation: gradientBG 8s ease infinite;
+            color: #fff;
             text-align: center;
-            padding: 20px;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         .container {
-            max-width: 600px;
-            margin: auto;
-            background: white;
+            max-width: 900px;
+            margin: 50px auto;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         h1 {
-            color: #333;
+            text-align: center;
+            color: #ff6f61;
+            font-size: 3em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            animation: bounceupdown 2s infinite;
         }
 
-        ul {
-            list-style: none;
+        @keyframes bounceupdown {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
             padding: 0;
+            list-style: none;
         }
 
-        li {
-            margin: 10px 0;
+        .projects-grid li {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease-in-out;
         }
 
-        a {
+        .projects-grid li:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .projects-grid a {
+            text-decoration: none;
+            color: #ff5733;
+            font-weight: 700;
+            font-size: 1.5rem;
             display: block;
             padding: 10px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s;
         }
 
-        a:hover {
-            background: #0056b3;
+        .projects-grid a:hover {
+            color: #ff33a6;
+        }
+
+        .projects-grid li:hover {
+            animation: bounce 0.4s ease infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(0px);
+            }
+
+            100% {
+                transform: translateY(-10px);
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>Projects</h1>
-        <ul>
-            <li><a href="../Malayalam_Letter_Tracing.html">മലയാളം Letter Tracing</a></li>
-            <li><a href="../Malayalam_Words.html">മലയാളം Words</a></li>
-            <li><a href="../books/Malayalam_Stories.html">മലയാളം കഥകൾ</a></li>
+        <h1>🌟 Projects 🎨</h1>
+        <ul class="projects-grid">
+            <li><a title="Malayalam Letter Tracing" href="../Malayalam_Letter_Tracing.html">മലയാളം അക്ഷരങ്ങൾ</a></li>
+            <li><a title="Malayalam Words" href="../Malayalam_Words.html">മലയാളം വാക്കുകൾ</a></li>
+            <li><a title="Malayalam Stories" href="../books/Malayalam_Stories.html">മലയാളം കഥകൾ</a></li>
             <li><a href="../books/Panchathantha_Stories.html">Panchathantha Stories</a></li>
             <li><a href="../Maths_Worksheet_Generator.html">Maths Worksheet Generator</a></li>
         </ul>

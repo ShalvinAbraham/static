@@ -1,30 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stay Tuned</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            background: radial-gradient(circle, #ff416c, #ff4b2b);
+            font-family: 'Comic Neue', cursive;
+            background: linear-gradient(135deg, #FF6B6B, #FFD166, #06D6A0, #118AB2, #EF476F);
+            background-size: 400% 400%;
             color: yellow;
             text-align: center;
+            animation: gradientBG 8s ease infinite;
         }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
         h1 {
             font-size: 4rem;
             text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.3);
             animation: blink 1s infinite alternate;
         }
+
         @keyframes blink {
-            from { opacity: 1; }
-            to { opacity: 0.5; }
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0.5;
+            }
         }
+
         .dramatic-text {
             font-size: 1.5rem;
             margin-top: 20px;
@@ -32,10 +59,12 @@
         }
     </style>
 </head>
+
 <body>
     <div>
         <h1>🚀 Stay Tuned! 🌟</h1>
         <p class="dramatic-text">Something EPIC is coming... or maybe just a cat video. Who knows? 🤷‍♂️</p>
     </div>
 </body>
+
 </html>
