@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const stopBtn = document.getElementById("stop-btn");
     const pauseBtn = document.getElementById("pause-btn");
     const resumeBtn = document.getElementById("resume-btn");
+    const incFontBtn = document.getElementById("inc-font-btn");
+    const decFontBtn = document.getElementById("dec-font-btn");
     const toastDiv = document.getElementById("toast");
 
     let utterance = null;
@@ -114,6 +116,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         readAloudBtn.disabled = isOpen;
         selectBtn.disabled = isOpen;
+        incFontBtn.disabled = false;
+        decFontBtn.disabled = false;
 
         // Open the selected story
         if (!isOpen) {
@@ -230,4 +234,20 @@ document.addEventListener("DOMContentLoaded", () => {
             toastDiv.classList.remove("show");
         }, 2000);
     }
+
+    function changeFontSize(step) {
+        const content = document.querySelector('#content');
+
+        let fontSize = parseFloat(window.getComputedStyle(content).fontSize);
+        fontSize += step;
+        content.style.fontSize = `${fontSize}px`;
+    }
+
+    incFontBtn.addEventListener('click', () => {
+        changeFontSize(5);
+    });
+
+    decFontBtn.addEventListener('click', () => {
+        changeFontSize(-5);
+    });
 });
