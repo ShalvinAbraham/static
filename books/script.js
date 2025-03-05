@@ -1,13 +1,40 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const content = document.getElementById("content");
-    const selectBtn = document.getElementById("select-btn");
-    const readAloudBtn = document.getElementById("read-aloud-btn");
-    const stopBtn = document.getElementById("stop-btn");
-    const pauseBtn = document.getElementById("pause-btn");
-    const resumeBtn = document.getElementById("resume-btn");
-    const incFontBtn = document.getElementById("inc-font-btn");
-    const decFontBtn = document.getElementById("dec-font-btn");
-    const toastDiv = document.getElementById("toast");
+    const content = document.getElementById('content');
+
+    const savedContentFontSize = localStorage.getItem('storyContentFontSize');
+    if (savedContentFontSize) {
+        content.style.fontSize = savedContentFontSize;
+    }
+
+    const controlsDiv = document.createElement('div');
+    controlsDiv.id = 'controls';
+
+    function add_button(matIconName, disabled = true) {
+        const button = document.createElement('button');
+        button.disabled = disabled;
+
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'material-symbols-outlined';
+        iconSpan.textContent = matIconName;
+        button.appendChild(iconSpan);
+
+        controlsDiv.appendChild(button);
+        return button;
+    }
+
+    const selectBtn = add_button('select_to_speak');
+    const readAloudBtn = add_button('campaign');
+    const stopBtn = add_button('stop');
+    const pauseBtn = add_button('pause');
+    const resumeBtn = add_button('resume');
+    const decFontBtn = add_button('text_decrease');
+    const incFontBtn = add_button('text_increase');
+
+    document.body.appendChild(controlsDiv);
+
+    const toastDiv = document.createElement('div');
+    toastDiv.className = 'toast';
+    document.body.appendChild(toastDiv);
 
     let utterance = null;
     let currentStoryContent = null;
@@ -69,7 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
         content.appendChild(bookDiv);
     });
 
-
     function beautifyQuotes(text) {
         const regex = /"([^"]+)"/g;
         let match;
@@ -116,8 +142,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         readAloudBtn.disabled = isOpen;
         selectBtn.disabled = isOpen;
-        incFontBtn.disabled = false;
-        decFontBtn.disabled = false;
+        incFontBtn.disabled = isOpen;
+        decFontBtn.disabled = isOpen;
 
         // Open the selected story
         if (!isOpen) {
@@ -236,18 +262,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function changeFontSize(step) {
-        const content = document.querySelector('#content');
-
         let fontSize = parseFloat(window.getComputedStyle(content).fontSize);
         fontSize += step;
         content.style.fontSize = `${fontSize}px`;
+        localStorage.setItem('storyContentFontSize', `${fontSize}px`);
     }
 
     incFontBtn.addEventListener('click', () => {
-        changeFontSize(5);
+        changeFontSize(2);
     });
 
     decFontBtn.addEventListener('click', () => {
-        changeFontSize(-5);
+        changeFontSize(-2);
     });
 });
