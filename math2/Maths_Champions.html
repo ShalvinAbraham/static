@@ -14,13 +14,14 @@
 <body>
     <a href="../l/index.html" title="Exit to All Projects" style="position:fixed;bottom:8px;left:8px;z-index:9999;background:#fff;width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:#e63946;font-size:28px;font-weight:900;line-height:1;-webkit-text-stroke:2px #e63946;box-shadow:0 2px 6px rgba(0,0,0,0.25);border:2px solid #e63946;">←</a>
     <div id="app">
-        <header id="hud" hidden>
+        <header id="hud">
             <div class="pill" id="hud-score">⭐ 0</div>
             <div class="pill" id="hud-streak">🔥 0</div>
             <div class="pill" id="hud-progress">1/10</div>
             <div class="pill stars-now" id="hud-stars-now">🎯 ⭐×5</div>
             <div class="spacer"></div>
             <button class="icon-btn" id="btn-sound" title="Sound">🔊</button>
+            <button class="icon-btn" id="btn-voice-toggle" title="Voice readout" hidden>🗣</button>
             <button class="icon-btn" id="btn-gear" title="Settings">⚙</button>
             <button class="icon-btn" id="btn-home" title="Home">🏠</button>
         </header>
@@ -41,13 +42,19 @@
 
             <div class="chip-row" id="home-playmode-chips" style="justify-content:center; margin-bottom:8px;"></div>
 
-            <div class="home-actions">
-                <button class="btn accent" id="btn-play" style="font-size:22px; padding:16px 28px;">▶ Play</button>
+            <div id="home-drill-section" style="text-align:center; margin: 0 auto 14px; max-width:560px;" hidden>
+                <div style="font-size:14px; opacity:.7; margin-bottom:8px;">✨ Or focus on one specific table</div>
+                <div id="home-drill-buttons" class="drill-icon-row"></div>
+            </div>
+
+            <div class="home-actions" style="margin-top:8px;">
+                <button class="btn accent play-primary" id="btn-play">▶ PLAY</button>
+            </div>
+            <div class="home-actions" style="margin-top:10px;">
                 <button class="btn secondary" id="btn-focus" hidden>🎯 Focus on Tricky</button>
                 <button class="btn info" id="btn-home-cert" hidden>🏆 Certificate</button>
-                <button class="btn ghost" id="btn-setup">⚙ Settings</button>
             </div>
-            <p style="opacity:.6; margin-top:14px; text-align:center;">Tap your name to switch profile. Great on a tablet 📱</p>
+            <p id="home-tip" style="opacity:.6; margin-top:14px; text-align:center;" hidden>Tap your name to switch profile. Great on a tablet 📱</p>
         </section>
 
         <section id="screen-setup" class="screen" hidden>
@@ -64,25 +71,21 @@
                 </div>
 
                 <div class="group">
-                    <div class="group-title">🎮 Play mode</div>
-                    <div class="chip-row" id="playmode-chips"></div>
-                    <div id="play-mode-extras" style="margin-top:8px;"></div>
+                    <div class="group-title">Time limit for Timed Challenge ⏱</div>
+                    <div class="chip-row" id="timelimit-chips"></div>
+                    <div class="group-sub">Only used when Timed Challenge is selected on Home.</div>
                 </div>
 
                 <div class="group">
                     <div class="group-title">Operations (pick one or more)</div>
                     <div class="chip-row" id="op-chips"></div>
+                    <div class="group-sub">Enabling an operation shows its table-drill button on Home.</div>
                 </div>
 
                 <div class="group">
-                    <div class="group-title">Difficulty</div>
-                    <div class="chip-row" id="diff-chips"></div>
-                </div>
-
-                <div class="group">
-                    <div class="group-title">Adaptive difficulty</div>
-                    <div class="chip-row" id="adaptive-chips"></div>
-                    <div class="group-sub">Auto-nudges harder after 5 correct in a row; easier after 3 misses.</div>
+                    <div class="group-title">Operand ranges (per operation)</div>
+                    <div class="group-sub" style="margin-bottom:6px;">Choose which left / right operand values are allowed. Applies to Standard, Missing-operand, Timed, AND Table-drill modes. Defaults: left 0–5, right 0–10.</div>
+                    <div id="opranges-container"></div>
                 </div>
 
                 <div class="group">
@@ -131,9 +134,9 @@
                 </div>
 
                 <div class="group">
-                    <div class="group-title">Read questions aloud (voice) 🗣</div>
+                    <div class="group-title">Allow voice readout 🗣</div>
                     <div class="chip-row" id="voice-chips"></div>
-                    <div class="group-sub">Uses your device's built-in text-to-speech.</div>
+                    <div class="group-sub">When on, questions are read aloud using the device's text-to-speech. Child can also mute/unmute from the play screen.</div>
                 </div>
 
                 <div class="group">
@@ -260,6 +263,16 @@
             </div>
             <div id="profile-quick-list" style="margin-top:10px;"></div>
             <div class="group-sub" style="margin-top:10px;">To add or delete profiles, open Settings.</div>
+        </div>
+    </div>
+
+    <!-- Drill modal -->
+    <div id="modal-drill" class="modal-backdrop" hidden>
+        <div class="modal profile-modal">
+            <h3 id="drill-title" style="margin:0 0 6px 0;">Pick a number</h3>
+            <div id="drill-desc" style="opacity:.7; margin:0 0 10px 0;"></div>
+            <div id="drill-base-chips" class="chip-row" style="gap:8px;"></div>
+            <div style="opacity:.5; font-size:12px; margin-top:10px; text-align:center;">Tap outside to cancel</div>
         </div>
     </div>
 

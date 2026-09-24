@@ -1,17 +1,11 @@
 /* Maths Champions v2
  * Features over v1:
  *   - Multi-child profiles (each with own settings/stats/log/streak)
- *   - Play modes: Standard random, Times-tables drill, Missing operand, Timed challenge
- *   - Adaptive difficulty option
- *   - Daily play streak
- *   - Voice / read-aloud
- *   - Reduced-motion setting (auto-detects prefers-reduced-motion)
- *   - Auto-pause on tab hidden (session clock + timed mode)
- *   - Log filters (all / correct / not solved / with hint)
- *   - HUD shows current-question star budget
- *   - Certificate with accuracy tier badge, italic uppercase name, landscape print
- *   - Wrong-password clears the input
- *   - Optional PWA install (manifest + service worker)
+ *   - Per-operation operand ranges (0-15 chip picker, multi-select)
+ *   - Play modes: Standard random, Missing operand, Timed challenge
+ *   - Per-operation "Table drill" (drill a single base against all allowed others)
+ *   - Daily play streak, voice, reduced motion, auto-pause on hidden tab
+ *   - Log filters, HUD current-star badge, cert with tier badge, PWA install
  */
 
 // ============ Constants ============
@@ -27,6 +21,9 @@ const KEYS = {
     pfx: (id, name) => `math2.p.${id}.${name}`,
 };
 
+// operand id aliases (for querying chip containers by op char)
+const OP_ALIAS = { '+': 'plus', '-': 'minus', '*': 'star', '/': 'slash' };
+
 // ============ Storage helpers ============
 const LS = {
     load(k, def) {
@@ -38,40 +35,45 @@ const LS = {
 };
 
 // ============ Defaults ============
+const RANGE_0_15 = Array.from({ length: 16 }, (_, i) => i);              // [0..15]
+const RANGE_1_15 = Array.from({ length: 15 }, (_, i) => i + 1);          // [1..15]
+
 const defaultSettings = {
     ops: ['+', '-', '*'],
-    difficulty: 'easy',              // 'easy' | 'medium' | 'hard'
     length: 20,
     modes: ['type', 'choice', 'truefalse'],
     sound: true,
     voice: false,
+    voiceEnabled: true,   // child-side toggle (only meaningful when voice is on)
     reducedMotion: false,
-    adaptive: false,
     iconPrimary: '🐬',
     allowNegative: false,
     starMax: 5,
     starStep: 1,
     numChoices: 4,
-    playMode: 'standard',            // 'standard' | 'table' | 'missing' | 'timed'
-    tableFor: 7,
+    playMode: 'standard',            // 'standard' | 'missing' | 'timed'
     timeLimit: START_TIME_LIMIT,
-    missingProb: 1.0,                // in missing mode, chance the missing spot is not 'ans'
+    activeDrill: null,               // null OR { op, base } — what PLAY starts when set
+
+    // Per-operation operand pools (multi-select 0..15).
+    // For + - *: left = a, right = b in `a op b`.
+    // For /: left = divisor, right = quotient (result). Question shown as (left*right) ÷ left = right.
+    // Defaults: left 0-5, right 0-10 all selected (for / divisor excludes 0).
+    opRanges: {
+        '+': { left: [0, 1, 2, 3, 4, 5], right: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+        '-': { left: [0, 1, 2, 3, 4, 5], right: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+        '*': { left: [0, 1, 2, 3, 4, 5], right: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+        '/': { left: [1, 2, 3, 4, 5],    right: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+    },
 };
+
+const DEFAULT_CERT_TITLE = 'Certificate of Awesome Maths';
 
 const defaultStats = {
-    totalStars: 0,
-    bestStreak: 0,
-    played: 0,
-    correct: 0,
-    wrong: 0,
-    perfectCorrect: 0,
+    totalStars: 0, bestStreak: 0, played: 0, correct: 0, wrong: 0, perfectCorrect: 0,
 };
 
-const defaultDaily = {
-    lastDate: '',
-    streakDays: 0,
-    totalDays: 0,
-};
+const defaultDaily = { lastDate: '', streakDays: 0, totalDays: 0 };
 
 // ============ Global state ============
 let profiles = LS.load(KEYS.profiles, []);
@@ -81,8 +83,8 @@ let appPassword = LS.load(KEYS.appPassword, '12345');
 let settings = { ...defaultSettings };
 let stats = { ...defaultStats };
 let daily = { ...defaultDaily };
-let weak = [];      // [{op,a,b,misses}]
-let log = [];       // [{...entry}]
+let weak = [];
+let log = [];
 
 let settingsUnlocked = false;
 let passCallback = null;
@@ -103,10 +105,28 @@ function ensureProfile() {
     }
 }
 
+// Deep-merge to preserve nested opRanges keys.
+function mergeSettings(saved) {
+    const merged = { ...defaultSettings, ...saved };
+    merged.opRanges = { ...defaultSettings.opRanges };
+    if (saved && saved.opRanges && typeof saved.opRanges === 'object') {
+        for (const op of Object.keys(defaultSettings.opRanges)) {
+            const src = saved.opRanges[op];
+            if (src && Array.isArray(src.left) && Array.isArray(src.right)) {
+                merged.opRanges[op] = {
+                    left: src.left.slice(),
+                    right: src.right.slice(),
+                };
+            }
+        }
+    }
+    return merged;
+}
+
 function loadProfile(id) {
     activeId = id;
     LS.save(KEYS.activeId, activeId);
-    settings = { ...defaultSettings, ...LS.load(KEYS.pfx(id, 'settings'), {}) };
+    settings = mergeSettings(LS.load(KEYS.pfx(id, 'settings'), {}));
     stats = { ...defaultStats, ...LS.load(KEYS.pfx(id, 'stats'), {}) };
     daily = { ...defaultDaily, ...LS.load(KEYS.pfx(id, 'daily'), {}) };
     weak = LS.load(KEYS.pfx(id, 'weak'), []);
@@ -209,10 +229,7 @@ const ICON_GROUPS = {
     '🚗': ['🚗','✈️','🚐','🚕','🚌','🚓','🚑','🚒','🚚','🚜','🚙','🏍️'],
 };
 const ICON_CHOICES = Object.keys(ICON_GROUPS);
-
-function iconGroup() {
-    return ICON_GROUPS[settings.iconPrimary] || ICON_GROUPS['🐬'];
-}
+function iconGroup() { return ICON_GROUPS[settings.iconPrimary] || ICON_GROUPS['🐬']; }
 function pickIcons(n) {
     const pool = iconGroup().slice();
     const out = [];
@@ -225,21 +242,17 @@ function pickIcons(n) {
     return out;
 }
 
-// ============ Audio (WebAudio) ============
+// ============ Audio ============
 let ac = null;
 function audio() {
     if (!settings.sound) return null;
-    if (!ac) {
-        try { ac = new (window.AudioContext || window.webkitAudioContext)(); }
-        catch { ac = null; }
-    }
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch { ac = null; } }
     if (ac && ac.state === 'suspended') ac.resume().catch(() => { });
     return ac;
 }
 function tone(freq, dur, type = 'sine', gain = 0.15, when = 0) {
     const a = audio(); if (!a) return;
-    const o = a.createOscillator();
-    const g = a.createGain();
+    const o = a.createOscillator(), g = a.createGain();
     o.type = type; o.frequency.value = freq;
     g.gain.value = gain;
     o.connect(g).connect(a.destination);
@@ -257,23 +270,30 @@ const sfx = {
 };
 
 // ============ Voice ============
+function voiceActive() {
+    return !!settings.voice && settings.voiceEnabled !== false;
+}
 function speak(text) {
-    if (!settings.voice || !('speechSynthesis' in window)) return;
+    if (!voiceActive() || !('speechSynthesis' in window)) return;
     try {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        u.rate = 0.95;
-        u.pitch = 1.05;
-        u.volume = 1;
+        u.rate = 0.95; u.pitch = 1.05; u.volume = 1;
         window.speechSynthesis.speak(u);
     } catch { }
 }
-
 function opWord(op) {
     return op === '+' ? 'plus' : op === '-' ? 'minus' : op === '*' ? 'times' : op === '/' ? 'divided by' : op;
 }
-
 function speakQuestion(q) {
+    // For True/False, we speak the exact claim shown on screen.
+    if (session && session.currentMode === 'truefalse' && session.tfShown != null) {
+        const a = q.ask === 'a' ? String(session.tfShown) : String(q.a);
+        const b = q.ask === 'b' ? String(session.tfShown) : String(q.b);
+        const r = q.ask === 'ans' ? String(session.tfShown) : String(q.ans);
+        speak(`Is ${a} ${opWord(q.op)} ${b} equal to ${r}?`);
+        return;
+    }
     const a = q.ask === 'a' ? 'what' : String(q.a);
     const b = q.ask === 'b' ? 'what' : String(q.b);
     const ans = q.ask === 'ans' ? 'what' : String(q.ans);
@@ -282,25 +302,14 @@ function speakQuestion(q) {
 
 // ============ Question generation ============
 function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-
-function currentDifficulty() {
-    return settings.adaptive && session ? session.adaptiveDifficulty : settings.difficulty;
+function pickFrom(arr, fallback) {
+    if (!arr || !arr.length) return fallback;
+    return arr[Math.floor(Math.random() * arr.length)];
 }
-
-function rangesFor(op, diff) {
-    if (op === '*') {
-        if (diff === 'easy') return [0, 9, 0, 9];
-        if (diff === 'medium') return [0, 12, 0, 9];
-        return [0, 19, 0, 9];
-    }
-    if (op === '/') {
-        if (diff === 'easy') return [0, 9, 1, 9];
-        if (diff === 'medium') return [0, 12, 1, 10];
-        return [0, 15, 1, 12];
-    }
-    if (diff === 'easy') return [0, 9, 0, 9];
-    if (diff === 'medium') return [0, 19, 0, 9];
-    return [10, 99, 10, 99];
+function opSym(op) {
+    if (op === '*') return '×';
+    if (op === '/') return '÷';
+    return op;
 }
 
 function pickFromWeak() {
@@ -311,74 +320,91 @@ function pickFromWeak() {
     return weak[weak.length - 1];
 }
 
-// build a standard {a, b, op, ans} triple respecting difficulty and settings
+function opRange(op) {
+    const r = settings.opRanges && settings.opRanges[op];
+    return r || defaultSettings.opRanges[op] || defaultSettings.opRanges['+'];
+}
+
 function makeStandardTriple(op) {
+    const r = opRange(op);
+    let leftPool = (r.left || []).slice();
+    let rightPool = (r.right || []).slice();
+    if (op === '/') leftPool = leftPool.filter(v => v > 0);   // divisor can't be 0
+    if (!leftPool.length) leftPool = defaultSettings.opRanges[op].left.slice();
+    if (!rightPool.length) rightPool = defaultSettings.opRanges[op].right.slice();
+
     if (op === '/') {
-        const [qMin, qMax, bMin, bMax] = rangesFor('/', currentDifficulty());
-        const b = rng(Math.max(1, bMin), Math.max(1, bMax));
-        const q = rng(qMin, qMax);
-        return { a: b * q, b, op, ans: q };
+        const divisor = pickFrom(leftPool, 1);
+        const quotient = pickFrom(rightPool, 0);
+        return { a: divisor * quotient, b: divisor, op, ans: quotient };
     }
-    const [minA, maxA, minB, maxB] = rangesFor(op, currentDifficulty());
-    let a = rng(minA, maxA);
-    let b = rng(minB, maxB);
+    let a = pickFrom(leftPool, 0);
+    let b = pickFrom(rightPool, 0);
     if (op === '-' && !settings.allowNegative && b > a) [a, b] = [b, a];
     const ans = op === '+' ? a + b : op === '-' ? a - b : a * b;
     return { a, b, op, ans };
 }
 
 function makeQuestion(focusWeak = false) {
-    const mode = settings.playMode;
-
-    if (mode === 'table') {
-        // Times-tables drill
-        const a = Math.max(1, parseInt(settings.tableFor, 10) || 7);
-        const b = rng(0, 9);
-        return { a, b, op: '*', ans: a * b, ask: 'ans' };
+    // Table-drill session pulls from the pre-built queue (refills on exhaustion when endless).
+    if (session && session.drillMode) {
+        if (session.drillIndex >= session.drillQueue.length) {
+            if (session.target === Infinity && session.drillPool && session.drillPool.length) {
+                session.drillQueue = session.drillQueue.concat(shuffle(session.drillPool.slice()));
+            } else {
+                return null;
+            }
+        }
+        return session.drillQueue[session.drillIndex++];
     }
 
-    if (mode === 'missing') {
-        // A random op question with missing operand or missing result
-        const enabled = settings.ops.length ? settings.ops : ['+'];
-        const op = enabled[rng(0, enabled.length - 1)];
-        const t = makeStandardTriple(op);
-        // pick which value to ask: 'a', 'b', or 'ans'
-        const roll = Math.random();
-        let ask;
-        if (roll < 0.35) ask = 'a';
-        else if (roll < 0.7) ask = 'b';
-        else ask = 'ans';
-        return { ...t, ask };
-    }
-
-    // Standard / timed both use the same generation
     const src = focusWeak ? pickFromWeak() : null;
     const enabled = settings.ops.length ? settings.ops : ['+'];
     const op = src ? src.op : enabled[rng(0, enabled.length - 1)];
 
     if (src) {
-        // reuse weak fact literally
         return { a: src.a, b: src.b, op, ans: standardAns(src.a, src.b, op), ask: 'ans' };
     }
+
     const t = makeStandardTriple(op);
-    return { ...t, ask: 'ans' };
+    if (settings.playMode === 'missing') {
+        const roll = Math.random();
+        t.ask = roll < 0.35 ? 'a' : (roll < 0.7 ? 'b' : 'ans');
+    } else {
+        t.ask = 'ans';
+    }
+    return t;
 }
 
 function standardAns(a, b, op) {
     if (op === '+') return a + b;
     if (op === '-') return a - b;
     if (op === '*') return a * b;
-    if (op === '/') return a / b;
+    if (op === '/') return b !== 0 ? a / b : 0;
     return 0;
 }
 
-function opSym(op) {
-    if (op === '*') return '×';
-    if (op === '/') return '÷';
-    return op;
+// Build the ordered drill queue for base against all admin-allowed 'other' values.
+function buildDrillQueue(op, base) {
+    const r = opRange(op);
+    const others = shuffle((r.right || []).slice());
+    const queue = [];
+    for (const other of others) {
+        if (op === '+') queue.push({ a: base, b: other, op, ans: base + other, ask: 'ans' });
+        else if (op === '-') {
+            let a = base, b = other;
+            if (!settings.allowNegative && b > a) continue;
+            queue.push({ a, b, op, ans: a - b, ask: 'ans' });
+        }
+        else if (op === '*') queue.push({ a: base, b: other, op, ans: base * other, ask: 'ans' });
+        else if (op === '/') {
+            // base = divisor, other = quotient; question is (base*other) ÷ base = other
+            queue.push({ a: base * other, b: base, op, ans: other, ask: 'ans' });
+        }
+    }
+    return queue;
 }
 
-// distractors for the value being asked (not always ans)
 function distractors(q, n = 3) {
     const target = q[q.ask];
     const set = new Set([target]);
@@ -445,8 +471,7 @@ function recordEntry(q, meta) {
     const target = q[q.ask];
     log.unshift({
         op: q.op, a: q.a, b: q.b, ans: q.ans,
-        ask: q.ask,
-        target,
+        ask: q.ask, target,
         ok: !!meta.ok,
         attempts: meta.attempts || 0,
         usedHint: !!meta.usedHint,
@@ -458,7 +483,7 @@ function recordEntry(q, meta) {
         streak: meta.streak || 0,
         mul: meta.mul || 1,
         mode: session ? session.currentMode : null,
-        playMode: settings.playMode,
+        playMode: session ? session.playMode : settings.playMode,
         when: Date.now(),
     });
     if (log.length > 500) log.length = 500;
@@ -494,25 +519,65 @@ function newSession(opts = {}) {
         startedAt: Date.now(),
         pausedAt: null,
         pausedTotal: 0,
-        adaptiveDifficulty: settings.difficulty,
-        adaptiveCorrectRun: 0,
-        adaptiveWrongRun: 0,
         history: [],
         missed: [],
         focusWeak: !!opts.focusWeak,
         current: null,
         currentMode: null,
         currentStars: starMax(),
-        attempts: 0,
-        answered: false,
-        usedHint: false,
-        wrongAnswers: [],
-        tfExpected: null,
-        clearInput: null,
-        keydown: null,
+        attempts: 0, answered: false,
+        usedHint: false, wrongAnswers: [],
+        tfExpected: null, clearInput: null, keydown: null,
         timerRemaining: settings.playMode === 'timed' ? Math.max(5, parseInt(settings.timeLimit, 10) || START_TIME_LIMIT) : null,
     };
     if (session.playMode === 'timed') startTimer();
+    nextQuestion();
+}
+
+// Table drill: fixed queue of questions.
+function startTableDrill(op, base) {
+    stopTimer();
+    bumpDailyOnPlay();
+    const pool = buildDrillQueue(op, base);
+    if (!pool.length) {
+        toast('No questions could be generated for this table (check operand ranges)');
+        show('home');
+        return;
+    }
+    const rawLen = settings.length;
+    const target = rawLen === 'endless' ? Infinity
+        : Math.max(1, parseInt(rawLen, 10) || pool.length);
+
+    let queue;
+    if (target === Infinity) {
+        queue = shuffle(pool.slice());
+    } else {
+        queue = [];
+        while (queue.length < target) queue = queue.concat(shuffle(pool.slice()));
+        queue = queue.slice(0, target);
+    }
+    session = {
+        playMode: 'drill',
+        drillMode: { op, base },
+        drillPool: pool,
+        drillQueue: queue,
+        drillIndex: 0,
+        target: target === Infinity ? Infinity : queue.length,
+        index: 0, correct: 0, wrong: 0,
+        streak: 0, bestStreak: 0,
+        starsEarned: 0, perfectCorrect: 0,
+        startedAt: Date.now(),
+        pausedAt: null, pausedTotal: 0,
+        history: [], missed: [],
+        focusWeak: false,
+        current: null, currentMode: null,
+        currentStars: starMax(),
+        attempts: 0, answered: false,
+        usedHint: false, wrongAnswers: [],
+        tfExpected: null, clearInput: null, keydown: null,
+        timerRemaining: null,
+    };
+    show('play');
     nextQuestion();
 }
 
@@ -524,77 +589,52 @@ function startTimer() {
         session.timerRemaining -= 1;
         updateHud();
         if (session.timerRemaining <= 5) sfx.tick();
-        if (session.timerRemaining <= 0) {
-            stopTimer();
-            endSession();
-        }
+        if (session.timerRemaining <= 0) { stopTimer(); endSession(); }
     }, 1000);
 }
 function stopTimer() { if (timerHandle) { clearInterval(timerHandle); timerHandle = null; } }
 
-function pauseSession() {
-    if (!session || session.pausedAt) return;
-    session.pausedAt = Date.now();
-}
+function pauseSession() { if (session && !session.pausedAt) session.pausedAt = Date.now(); }
 function resumeSession() {
     if (!session || !session.pausedAt) return;
     session.pausedTotal += Date.now() - session.pausedAt;
     session.pausedAt = null;
 }
-
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) pauseSession(); else resumeSession();
 });
 
 function nextQuestion() {
     removeKeypadKeys();
-    const qt = $('#q-text');
-    const qb = $('#q-body');
-    const pa = $('.play-actions');
+    const qt = $('#q-text'), qb = $('#q-body'), pa = $('.play-actions');
     if (qt) qt.style.display = '';
     if (qb) qb.style.display = '';
     if (pa) pa.style.display = '';
     const hm = $('#modal-hint');
     if (hm) hm.hidden = true;
+
     if (session.playMode !== 'timed' && session.index >= session.target) return endSession();
+
+    const q = makeQuestion(session.focusWeak && weak.length > 0);
+    if (!q) return endSession();
+
     session.index++;
     session.attempts = 0;
     session.answered = false;
     session.usedHint = false;
     session.wrongAnswers = [];
     session.currentStars = starMax();
-    session.current = makeQuestion(session.focusWeak && weak.length > 0);
+    session.current = q;
+
     let enabled = settings.modes.length ? settings.modes.slice() : ['type'];
-    if (session.playMode === 'missing') {
-        // TF doesn't make sense when the missing piece is an operand
+    // TF doesn't make sense when the missing piece is an operand.
+    if (settings.playMode === 'missing') {
         enabled = enabled.filter(m => m !== 'truefalse');
         if (!enabled.length) enabled = ['type'];
     }
     session.currentMode = enabled[rng(0, enabled.length - 1)];
     renderPlay();
-    // Speak the question after render
     setTimeout(() => speakQuestion(session.current), 200);
-}
-
-function adjustAdaptive(correct) {
-    if (!settings.adaptive || !session) return;
-    if (correct) {
-        session.adaptiveCorrectRun++;
-        session.adaptiveWrongRun = 0;
-        if (session.adaptiveCorrectRun >= 5) {
-            session.adaptiveCorrectRun = 0;
-            if (session.adaptiveDifficulty === 'easy') session.adaptiveDifficulty = 'medium';
-            else if (session.adaptiveDifficulty === 'medium') session.adaptiveDifficulty = 'hard';
-        }
-    } else {
-        session.adaptiveWrongRun++;
-        session.adaptiveCorrectRun = 0;
-        if (session.adaptiveWrongRun >= 3) {
-            session.adaptiveWrongRun = 0;
-            if (session.adaptiveDifficulty === 'hard') session.adaptiveDifficulty = 'medium';
-            else if (session.adaptiveDifficulty === 'medium') session.adaptiveDifficulty = 'easy';
-        }
-    }
 }
 
 // ============ UI helpers ============
@@ -612,7 +652,13 @@ function show(id) {
         const el = $('#screen-' + s);
         if (el) el.hidden = (s !== id);
     });
-    $('#hud').hidden = (id !== 'play');
+    const hud = $('#hud');
+    if (hud) {
+        hud.hidden = false;
+        hud.classList.toggle('no-session', id !== 'play');
+        hud.classList.toggle('on-home', id === 'home');
+        hud.classList.toggle('on-setup', id === 'setup');
+    }
     if (id !== 'setup') lockSettings();
     quietMode = (id === 'setup');
 }
@@ -641,10 +687,20 @@ function updateHud() {
         $('#hud-progress').classList.remove('timer');
     }
     $('#hud-stars-now').textContent = `🎯 ⭐×${session.currentStars}`;
+    updateVoiceToggle();
     const pct = session.target === Infinity
         ? Math.min(100, session.correct * 2)
         : ((session.index - 1) / session.target) * 100;
     $('#bar').style.width = pct + '%';
+}
+
+function updateVoiceToggle() {
+    const btn = $('#btn-voice-toggle');
+    if (!btn) return;
+    if (!settings.voice) { btn.hidden = true; return; }
+    btn.hidden = false;
+    btn.textContent = settings.voiceEnabled === false ? '🔇' : '🗣';
+    btn.title = settings.voiceEnabled === false ? 'Turn voice on' : 'Turn voice off';
 }
 
 function mascotFor() {
@@ -677,9 +733,7 @@ function renderPlay() {
 
     if (session.currentMode === 'type') {
         body.innerHTML = `
-            <div style="text-align:center;">
-                <div class="type-answer" id="type-answer">·</div>
-            </div>
+            <div style="text-align:center;"><div class="type-answer" id="type-answer">·</div></div>
             <div class="keypad" id="keypad"></div>
         `;
         buildKeypad();
@@ -695,10 +749,8 @@ function renderPlay() {
             sfx.click();
             const val = parseInt(b.dataset.val, 10);
             session.attempts++;
-            if (val === q[q.ask]) {
-                session.answered = true;
-                onCorrect(b);
-            } else {
+            if (val === q[q.ask]) { session.answered = true; onCorrect(b); }
+            else {
                 session.wrongAnswers.push(val);
                 session.currentStars = Math.max(1, session.currentStars - starStep());
                 b.disabled = true;
@@ -710,23 +762,20 @@ function renderPlay() {
             }
         }));
     } else {
-        // True/False on the standard form of the question (only supported when ask === 'ans')
         const target = q[q.ask];
         const isTrue = Math.random() < 0.5;
         let shown;
         if (isTrue) shown = target;
         else {
             let delta, tries = 0;
-            do {
-                delta = (Math.random() < 0.5 ? -1 : 1) * rng(1, 3);
-                tries++;
-            } while (!settings.allowNegative && target + delta < 0 && tries < 10);
+            do { delta = (Math.random() < 0.5 ? -1 : 1) * rng(1, 3); tries++; }
+            while (!settings.allowNegative && target + delta < 0 && tries < 10);
             shown = target + delta;
             if (!settings.allowNegative && shown < 0) shown = target + Math.abs(delta);
             if (shown === target) shown = target + 1;
         }
         session.tfExpected = (shown === target) ? 1 : 0;
-        // rewrite the question text with the "shown" candidate substituted
+        session.tfShown = shown;
         const parts = {
             a: q.ask === 'a' ? `<span class="a">${shown}</span>` : `<span class="a">${q.a}</span>`,
             b: q.ask === 'b' ? `<span class="b">${shown}</span>` : `<span class="b">${q.b}</span>`,
@@ -757,7 +806,6 @@ function renderPlay() {
                 recordEntry(q, { ok: false, attempts: session.attempts, usedHint: session.usedHint, given: gave, wrongAnswers: session.wrongAnswers });
                 persist();
                 sfx.wrong();
-                adjustAdaptive(false);
                 showAnswerAndPause();
             }
         }));
@@ -770,7 +818,6 @@ function buildKeypad() {
     const rows = withSign
         ? [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['sign', '0', 'back'], ['ok-wide']]
         : [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['back', '0', 'ok']];
-
     const cells = [];
     rows.forEach(r => r.forEach(k => {
         if (k === 'ok') cells.push(`<button class="key ok" data-k="ok">✓</button>`);
@@ -795,8 +842,7 @@ function buildKeypad() {
         if (k === 'back') { buffer = buffer.slice(0, -1); render(); return; }
         if (k === 'sign' && withSign) {
             buffer = buffer.startsWith('-') ? buffer.slice(1) : '-' + buffer;
-            render();
-            return;
+            render(); return;
         }
         if (k === 'ok') {
             if (!buffer || buffer === '-') return;
@@ -833,10 +879,7 @@ function handleTypeAnswer(given, el) {
     if (session.answered) return;
     session.attempts++;
     const q = session.current;
-    if (given === q[q.ask]) {
-        session.answered = true;
-        return onCorrect(el);
-    }
+    if (given === q[q.ask]) { session.answered = true; return onCorrect(el); }
     session.wrongAnswers.push(given);
     session.currentStars = Math.max(1, session.currentStars - starStep());
     sfx.wrong();
@@ -869,11 +912,9 @@ function onCorrect(el) {
     stats.perfectCorrect = (stats.perfectCorrect || 0) + (session.attempts === 1 && !session.usedHint ? 1 : 0);
     recordEntry(q, {
         ok: true, attempts: session.attempts, usedHint: session.usedHint,
-        stars, streak: session.streak, mul,
-        wrongAnswers: session.wrongAnswers
+        stars, streak: session.streak, mul, wrongAnswers: session.wrongAnswers
     });
     persist();
-    adjustAdaptive(true);
     sfx.correct();
     speak('Correct! ' + stars + ' stars.');
     if (el && el.classList) el.classList.add('flash-correct');
@@ -889,12 +930,10 @@ function onCorrect(el) {
 
 // ============ Reveal / Show Answer ============
 function enterLearnMode() {
-    const qb = $('#q-body');
-    const pa = $('.play-actions');
+    const qb = $('#q-body'), pa = $('.play-actions');
     if (qb) qb.style.display = 'none';
     if (pa) pa.style.display = 'none';
 }
-
 function showAnswerAndPause() {
     enterLearnMode();
     const hm = $('#modal-hint');
@@ -911,19 +950,15 @@ function showAnswerAndPause() {
     `;
     slot.appendChild(box);
     slot.scrollTop = slot.scrollHeight;
-    $('#btn-next').addEventListener('click', () => {
-        sfx.click();
-        nextQuestion();
-    });
+    $('#btn-next').addEventListener('click', () => { sfx.click(); nextQuestion(); });
 }
 
-// ============ Hints (visual only, no numeric answer unless reveal=true) ============
+// ============ Hints ============
 function iconSpans(count, icon, cls) {
     let out = '';
     for (let i = 0; i < count; i++) out += `<span${cls ? ` class="${cls}"` : ''}>${icon}</span>`;
     return out;
 }
-
 function addHintVisual(a, b) {
     if (a + b > 24) return `<div class="hint">Count on from the bigger number. Add tens first, then ones. 🧮</div>`;
     const [p, s] = pickIcons(2);
@@ -951,7 +986,6 @@ function subHintVisual(a, b) {
 function mulHintVisual(rows, cols) {
     if (rows === 0 || cols === 0) return `<div class="hint">Anything times zero is nothing. 🌟</div>`;
     if (rows * cols > 30) return `<div class="hint">Think of it as ${rows} rows of ${cols}. 🧮</div>`;
-    // aesthetic: prefer wider layout (more columns than rows)
     let dr = rows, dc = cols;
     if (dc < dr) { const t = dr; dr = dc; dc = t; }
     const icons = pickIcons(dr);
@@ -977,10 +1011,7 @@ function divHintVisual(a, b) {
         <div class="icongroups">${groups.join('')}</div>
         <div class="hint">Look at ${b} groups. How many in each? 🧮</div>`;
 }
-
 function missingHint(q) {
-    // for missing-operand mode, give a text nudge based on which value is asked
-    const t = q[q.ask];
     if (q.ask === 'ans') {
         if (q.op === '+') return addHintVisual(q.a, q.b);
         if (q.op === '-') return subHintVisual(q.a, q.b);
@@ -997,7 +1028,6 @@ function missingHint(q) {
     if (q.op === '/' && q.ask === 'b') return `<div class="hint">${q.a} ÷ what makes ${q.ans}? Try ${q.a} ÷ ${q.ans}. 🧮</div>`;
     return `<div class="hint">Take your time and count carefully. 🧮</div>`;
 }
-
 function showHintInto(target, reveal = false) {
     if (!session || !session.current) return;
     const q = session.current;
@@ -1005,7 +1035,6 @@ function showHintInto(target, reveal = false) {
     if (reveal) {
         const targetLabel = q.ask === 'ans' ? 'Answer' : 'Missing number';
         html += `<div class="hint" style="background:#ffe8e8;">${targetLabel}: <b style="font-size:1.4em;">${q[q.ask]}</b> 🌟</div>`;
-        // for reveal, also print the full equation
         html += `<div class="hint">Full equation: <b>${q.a} ${opSym(q.op)} ${q.b} = ${q.ans}</b></div>`;
     }
     if (target) target.innerHTML = html;
@@ -1078,10 +1107,8 @@ function confettiBurst() {
             y: window.innerHeight / 3,
             vx: (Math.random() - 0.5) * 9,
             vy: -Math.random() * 7 - 3,
-            g: 0.28,
-            c: colors[i % colors.length],
-            s: 5 + Math.random() * 5,
-            life: 90 + Math.random() * 40,
+            g: 0.28, c: colors[i % colors.length],
+            s: 5 + Math.random() * 5, life: 90 + Math.random() * 40,
         });
     }
     if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(tick); }
@@ -1147,7 +1174,7 @@ function openCertificate() {
 <body>
     <div class="cert">
         <div class="emoji">${badge} 🌟 ${badge}</div>
-        <h1>Certificate of Awesome Maths</h1>
+        <h1>${DEFAULT_CERT_TITLE}</h1>
         <div class="badge">— ${escapeHtml(tier)} —</div>
         <h2>Proudly awarded to</h2>
         <div class="name">${escapeHtml(name)}</div>
@@ -1171,10 +1198,10 @@ function openCertificate() {
     w.document.close();
 }
 
-// ============ Export / Import (full backup: all profiles) ============
+// ============ Export / Import ============
 function exportAll() {
     const dump = {
-        version: 4,
+        version: 5,
         exportedAt: new Date().toISOString(),
         appPassword: appPassword,
         profiles: profiles.map(p => ({
@@ -1222,24 +1249,17 @@ function importAll(file) {
             renderSetup();
             renderHome();
             toast('Data imported ✅');
-        } catch (e) {
-            toast('Import failed ❌');
-        }
+        } catch (e) { toast('Import failed ❌'); }
     };
     reader.readAsText(file);
 }
 
-// ============ Setup UI ============
+// ============ Setup UI data ============
 const OPS = [
     { v: '+', label: '➕ Add' },
     { v: '-', label: '➖ Subtract' },
     { v: '*', label: '✖ Multiply' },
     { v: '/', label: '➗ Divide' },
-];
-const DIFFS = [
-    { v: 'easy', label: '😊 Easy (0–9)' },
-    { v: 'medium', label: '🙂 Medium (up to 19)' },
-    { v: 'hard', label: '😎 Hard (2-digit)' },
 ];
 const LENS = [
     { v: 10, label: '10' },
@@ -1254,12 +1274,10 @@ const MODES = [
 ];
 const CHOICES = [2, 3, 4, 5, 6, 7, 8, 9].map(v => ({ v, label: String(v) }));
 const PLAY_MODES = [
-    { v: 'standard', label: '🎯 Standard random' },
-    { v: 'table', label: '🔁 Times-tables drill' },
+    { v: 'standard', label: '🎯 Standard' },
     { v: 'missing', label: '❓ Missing operand' },
     { v: 'timed', label: '⏱ Timed challenge' },
 ];
-const TABLES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(v => ({ v, label: `× ${v}` }));
 const TIME_LIMITS = [30, 45, 60, 90, 120].map(v => ({ v, label: `${v}s` }));
 const YESNO = [
     { v: false, label: 'No' },
@@ -1288,7 +1306,7 @@ function renderChips(rootSel, items, current, multi, extraClass = '', onChange =
         else if (/^-?\d+$/.test(raw)) v = parseInt(raw, 10);
         else v = raw;
         if (multi) {
-            if (sel.includes(v)) { if (sel.length > 1) sel = sel.filter(x => x !== v); }
+            if (sel.includes(v)) { if (sel.length > 0) sel = sel.filter(x => x !== v); }
             else sel = [...sel, v];
         } else sel = v;
         paint();
@@ -1297,19 +1315,39 @@ function renderChips(rootSel, items, current, multi, extraClass = '', onChange =
     };
 }
 
-function renderPlayModeExtras() {
-    const modeExtras = $('#play-mode-extras');
-    if (!modeExtras) return;
-    if (settings.playMode === 'table') {
-        modeExtras.innerHTML = `<div class="group-title">Which table?</div><div class="chip-row" id="table-chips"></div>`;
-        renderChips('#table-chips', TABLES, parseInt(settings.tableFor, 10) || 7, false, '', v => { settings.tableFor = v; });
-    } else if (settings.playMode === 'timed') {
-        modeExtras.innerHTML = `<div class="group-title">Time limit</div><div class="chip-row" id="timelimit-chips"></div>`;
-        renderChips('#timelimit-chips', TIME_LIMITS, parseInt(settings.timeLimit, 10) || 60, false, '', v => { settings.timeLimit = v; });
-    } else if (settings.playMode === 'missing') {
-        modeExtras.innerHTML = `<div class="group-sub">Missing-operand practices <code>?</code> in any position, e.g. <code>7 + ? = 12</code>. Uses your selected operations.</div>`;
-    } else {
-        modeExtras.innerHTML = '';
+// Render per-operation left/right operand chip rows.
+function renderOpRanges() {
+    const container = $('#opranges-container');
+    if (!container) return;
+    const opsMeta = [
+        { op: '+', label: 'Addition', leftLabel: 'Left (a)', rightLabel: 'Right (b)', leftPool: RANGE_0_15, rightPool: RANGE_0_15 },
+        { op: '-', label: 'Subtraction', leftLabel: 'Left (a)', rightLabel: 'Right (b)', leftPool: RANGE_0_15, rightPool: RANGE_0_15 },
+        { op: '*', label: 'Multiplication', leftLabel: 'Left (a)', rightLabel: 'Right (b)', leftPool: RANGE_0_15, rightPool: RANGE_0_15 },
+        { op: '/', label: 'Division', leftLabel: 'Divisor (b, no 0)', rightLabel: 'Quotient (answer)', leftPool: RANGE_1_15, rightPool: RANGE_0_15 },
+    ];
+    container.innerHTML = opsMeta.map(o => {
+        const alias = OP_ALIAS[o.op];
+        return `
+        <div class="group op-ranges-group" style="border:2px dashed #ddd; border-radius:12px; padding:10px 12px;">
+            <div class="group-title">${o.label} (${opSym(o.op)})</div>
+            <div class="group-sub">${o.leftLabel}</div>
+            <div class="chip-row small-chips" id="oprange-left-${alias}"></div>
+            <div class="group-sub" style="margin-top:8px;">${o.rightLabel}</div>
+            <div class="chip-row small-chips" id="oprange-right-${alias}"></div>
+        </div>
+        `;
+    }).join('');
+    for (const o of opsMeta) {
+        const alias = OP_ALIAS[o.op];
+        const leftItems = o.leftPool.map(v => ({ v, label: String(v) }));
+        const rightItems = o.rightPool.map(v => ({ v, label: String(v) }));
+        const opRef = o.op;
+        renderChips(`#oprange-left-${alias}`, leftItems, (settings.opRanges[opRef] && settings.opRanges[opRef].left) || [], true, '', v => {
+            settings.opRanges[opRef].left = v;
+        });
+        renderChips(`#oprange-right-${alias}`, rightItems, (settings.opRanges[opRef] && settings.opRanges[opRef].right) || [], true, '', v => {
+            settings.opRanges[opRef].right = v;
+        });
     }
 }
 
@@ -1327,8 +1365,7 @@ function renderProfileList() {
     list.onclick = (e) => {
         const b = e.target.closest('button[data-act]');
         if (!b) return;
-        const id = b.dataset.id;
-        const act = b.dataset.act;
+        const id = b.dataset.id, act = b.dataset.act;
         sfx.click();
         if (act === 'switch') {
             if (id !== activeId) { loadProfile(id); renderSetup(); renderHome(); toast('Switched profile'); }
@@ -1360,20 +1397,13 @@ function renderProfileList() {
 }
 
 function renderSetup() {
-    // Profiles list
     renderProfileList();
-
-    // Play mode
-    renderChips('#playmode-chips', PLAY_MODES, settings.playMode || 'standard', false, '', v => {
-        settings.playMode = v;
-        renderPlayModeExtras();
+    renderChips('#op-chips', OPS, settings.ops, true, '', v => {
+        settings.ops = v;
+        renderHome();  // drill buttons depend on enabled ops
     });
-    renderPlayModeExtras();
-
-    // Standard settings
-    renderChips('#op-chips', OPS, settings.ops, true, '', v => { settings.ops = v; });
-    renderChips('#diff-chips', DIFFS, settings.difficulty, false, '', v => { settings.difficulty = v; });
-    renderChips('#adaptive-chips', YESNO, !!settings.adaptive, false, '', v => { settings.adaptive = v; });
+    renderOpRanges();
+    renderChips('#timelimit-chips', TIME_LIMITS, parseInt(settings.timeLimit, 10) || 60, false, '', v => { settings.timeLimit = v; });
     renderChips('#len-chips', LENS, settings.length, false, '', v => {
         settings.length = v;
         const inp = $('#input-length');
@@ -1387,20 +1417,56 @@ function renderSetup() {
     renderChips('#voice-chips', YESNO, !!settings.voice, false, '', v => { settings.voice = v; });
     renderChips('#rm-chips', YESNO, !!settings.reducedMotion, false, '', v => { settings.reducedMotion = v; applyReducedMotion(); });
 
-    // Text inputs
     $('#input-length').value = (typeof settings.length === 'number') ? settings.length : '';
     $('#input-star-max').value = settings.starMax;
     $('#input-star-step').value = settings.starStep;
     $('#input-new-password').value = '';
-    // Update log button label
     const openLog = $('#btn-open-log');
     if (openLog) openLog.textContent = `📝 View log (${log.length})`;
+}
+
+function renderHomeDrillButtons() {
+    const container = $('#home-drill-buttons');
+    const section = $('#home-drill-section');
+    if (!container) return;
+    const enabled = settings.ops || [];
+    const items = [
+        { op: '+', sym: '➕' },
+        { op: '-', sym: '➖' },
+        { op: '*', sym: '✖️' },
+        { op: '/', sym: '➗' },
+    ];
+    const active = items.filter(i => enabled.includes(i.op));
+    if (section) section.hidden = active.length === 0;
+    const ad = settings.activeDrill;
+    container.innerHTML = active.map(i => {
+        const isOn = ad && ad.op === i.op;
+        const baseTag = isOn ? `<span class="drill-base">${ad.base}</span>` : '';
+        return `<button class="drill-icon ${isOn ? 'on' : ''}" data-op="${i.op}" title="Table of ${i.op}">
+            <span class="drill-op-sym">${i.sym}</span>
+            <span class="drill-label">TABLE</span>
+            ${baseTag}
+        </button>`;
+    }).join('');
+    container.onclick = (e) => {
+        const b = e.target.closest('button[data-op]');
+        if (!b) return;
+        sfx.click();
+        const op = b.dataset.op;
+        if (settings.activeDrill && settings.activeDrill.op === op) {
+            // toggle off if same op is already selected
+            settings.activeDrill = null;
+            persist();
+            renderHome();
+        } else {
+            openDrillModal(op);
+        }
+    };
 }
 
 function renderHome() {
     ensureProfile();
     const p = activeProfile();
-    // Profile bar
     $('#profile-pill').textContent = `👤 ${p.name}`;
     $('#badge-days').textContent = `📅 ${daily.streakDays || 0} day${(daily.streakDays === 1) ? '' : 's'}`;
     $('#badge-total').textContent = `⭐ ${stats.totalStars}`;
@@ -1415,10 +1481,60 @@ function renderHome() {
     `;
     $('#btn-focus').hidden = weak.length === 0;
     $('#btn-home-cert').hidden = !(stats.played > 0 || stats.totalStars > 0);
-    // Home play-mode chips (mini)
-    renderChips('#home-playmode-chips', PLAY_MODES, settings.playMode || 'standard', false, '', v => {
-        settings.playMode = v;
-    });
+    const tip = $('#home-tip'); if (tip) tip.hidden = profiles.length <= 1;
+    renderChips('#home-playmode-chips', PLAY_MODES,
+        settings.activeDrill ? '__none__' : (settings.playMode || 'standard'),
+        false, '', v => {
+            settings.playMode = v;
+            settings.activeDrill = null;
+            renderHomeDrillButtons();
+            renderPlayLabel();
+            const row = $('#home-playmode-chips');
+            if (row) row.classList.remove('overridden');
+        });
+    const modeRow = $('#home-playmode-chips');
+    if (modeRow) modeRow.classList.toggle('overridden', !!settings.activeDrill);
+    renderHomeDrillButtons();
+    renderPlayLabel();
+}
+
+// ============ Drill modal ============
+function openDrillModal(op) {
+    const m = $('#modal-drill');
+    if (!m) return;
+    let bases = (settings.opRanges[op] && settings.opRanges[op].left) || [];
+    if (op === '/') bases = bases.filter(v => v > 0);
+    $('#drill-title').textContent = `Pick a number: ${opSym(op)} table`;
+    $('#drill-desc').textContent = op === '/' ? 'Divisor to practice (fixed part of each question):' : 'Base number to practice (fixed part of each question):';
+    if (!bases.length) {
+        $('#drill-base-chips').innerHTML = `<div style="opacity:.7;">No base numbers are selected in Settings for ${opSym(op)}. Open Settings → operand ranges to enable some.</div>`;
+    } else {
+        $('#drill-base-chips').innerHTML = bases.map(v =>
+            `<button class="chip" data-base="${v}" style="font-size:22px; min-width:52px;">${v}</button>`
+        ).join('');
+    }
+    $('#drill-base-chips').onclick = (e) => {
+        const b = e.target.closest('.chip[data-base]');
+        if (!b) return;
+        const base = parseInt(b.dataset.base, 10);
+        sfx.click();
+        settings.activeDrill = { op, base };
+        persist();
+        m.hidden = true;
+        renderHome();
+    };
+    m.hidden = false;
+}
+
+function renderPlayLabel() {
+    const b = $('#btn-play');
+    if (!b) return;
+    const ad = settings.activeDrill;
+    if (ad) {
+        b.innerHTML = `▶ PLAY<span class="play-sub">${opSym(ad.op)} Table of ${ad.base}</span>`;
+    } else {
+        b.textContent = '▶ PLAY';
+    }
 }
 
 // ============ Log modal ============
@@ -1430,7 +1546,6 @@ function tagFor(f) {
     if (f.skipped) return '⤼ skipped';
     return `✗ ${f.attempts} wrong`;
 }
-
 function filteredLog() {
     return log.filter(f => {
         if (logFilter === 'all') return true;
@@ -1440,7 +1555,6 @@ function filteredLog() {
         return true;
     });
 }
-
 function renderLog() {
     const list = $('#log-list');
     if (!list) return;
@@ -1466,7 +1580,6 @@ function renderLog() {
         </div>`;
     }).join('');
 }
-
 function renderLogFilters() {
     const opts = [
         { v: 'all', label: 'All' },
@@ -1478,8 +1591,7 @@ function renderLogFilters() {
         `<button class="chip ${logFilter === o.v ? 'on' : ''}" data-v="${o.v}">${o.label}</button>`
     ).join('');
     $('#log-filters').onclick = (e) => {
-        const b = e.target.closest('.chip');
-        if (!b) return;
+        const b = e.target.closest('.chip'); if (!b) return;
         sfx.click();
         logFilter = b.dataset.v;
         renderLogFilters();
@@ -1489,7 +1601,6 @@ function renderLogFilters() {
 
 // ============ Wire up ============
 function wire() {
-    // Password modal
     $('#pass-ok').addEventListener('click', () => { sfx.click(); tryPassword(); });
     $('#pass-cancel').addEventListener('click', () => { sfx.click(); closePasswordModal(); });
     $('#pass-input').addEventListener('keydown', (e) => {
@@ -1497,24 +1608,27 @@ function wire() {
         else if (e.key === 'Escape') { e.preventDefault(); closePasswordModal(); }
     });
 
-    // Home
-    $('#btn-play').addEventListener('click', () => { sfx.click(); show('play'); newSession(); });
+    $('#btn-play').addEventListener('click', () => {
+        sfx.click();
+        show('play');
+        if (settings.activeDrill) {
+            startTableDrill(settings.activeDrill.op, settings.activeDrill.base);
+        } else {
+            newSession();
+        }
+    });
     $('#btn-focus').addEventListener('click', () => { sfx.click(); show('play'); newSession({ focusWeak: true }); });
     $('#btn-home-cert').addEventListener('click', () => { sfx.click(); openCertificate(); });
-    $('#btn-setup').addEventListener('click', () => {
+    const setupBtn = $('#btn-setup');
+    if (setupBtn) setupBtn.addEventListener('click', () => {
         sfx.click();
         requireSettingsAccess(() => { renderSetup(); show('setup'); });
     });
-    $('#profile-pill').addEventListener('click', () => {
-        sfx.click();
-        openProfileQuickModal();
-    });
+    $('#profile-pill').addEventListener('click', () => { sfx.click(); openProfileQuickModal(); });
 
-    // Setup
     $('#btn-back-home').addEventListener('click', () => { sfx.click(); renderHome(); show('home'); });
     $('#btn-start').addEventListener('click', () => { sfx.click(); show('play'); newSession(); });
 
-    // HUD
     $('#btn-home').addEventListener('click', () => {
         sfx.click();
         stopTimer();
@@ -1538,7 +1652,18 @@ function wire() {
     });
     $('#btn-sound').textContent = settings.sound ? '🔊' : '🔇';
 
-    // Play actions
+    $('#btn-voice-toggle').addEventListener('click', () => {
+        if (!settings.voice) return;
+        sfx.click();
+        settings.voiceEnabled = settings.voiceEnabled === false ? true : false;
+        if (settings.voiceEnabled === false && 'speechSynthesis' in window) {
+            try { window.speechSynthesis.cancel(); } catch { }
+        }
+        persist();
+        updateVoiceToggle();
+        toast(settings.voiceEnabled ? 'Voice on 🗣' : 'Voice off 🔇');
+    });
+
     $('#btn-hint').addEventListener('click', () => {
         if (!session || session.answered) return;
         sfx.click();
@@ -1564,7 +1689,6 @@ function wire() {
         markWeak(q);
         recordEntry(q, { ok: false, attempts: session.attempts, usedHint: session.usedHint, shownAnswer: true, wrongAnswers: session.wrongAnswers });
         persist();
-        adjustAdaptive(false);
         showAnswerAndPause();
     });
     $('#btn-skip').addEventListener('click', () => {
@@ -1579,17 +1703,14 @@ function wire() {
         markWeak(q);
         recordEntry(q, { ok: false, attempts: session.attempts, usedHint: session.usedHint, skipped: true, wrongAnswers: session.wrongAnswers });
         persist();
-        adjustAdaptive(false);
         nextQuestion();
     });
 
-    // End
     $('#btn-again').addEventListener('click', () => { sfx.click(); show('play'); newSession(); });
     $('#btn-focus-end').addEventListener('click', () => { sfx.click(); show('play'); newSession({ focusWeak: true }); });
     $('#btn-end-home').addEventListener('click', () => { sfx.click(); renderHome(); show('home'); });
     $('#btn-cert').addEventListener('click', () => { sfx.click(); openCertificate(); });
 
-    // Setup - text inputs
     $('#input-length').addEventListener('input', (e) => {
         const n = parseInt(e.target.value, 10);
         if (Number.isFinite(n) && n > 0 && n <= 999) {
@@ -1618,7 +1739,6 @@ function wire() {
         toast('Grown-up code updated 🔒');
     });
 
-    // Profiles
     $('#btn-new-profile').addEventListener('click', () => {
         sfx.click();
         const name = window.prompt('Name for the new profile:', 'Champion');
@@ -1632,7 +1752,6 @@ function wire() {
         toast('Profile created ✨');
     });
 
-    // Data
     $('#btn-export').addEventListener('click', () => { sfx.click(); exportAll(); });
     $('#btn-import').addEventListener('click', () => { sfx.click(); $('#file-import').click(); });
     $('#file-import').addEventListener('change', (e) => {
@@ -1643,7 +1762,6 @@ function wire() {
     $('#btn-reset-profile').addEventListener('click', () => { sfx.click(); resetAllForProfile(); });
     $('#btn-reset-all').addEventListener('click', () => { sfx.click(); resetEverything(); });
 
-    // Log modal
     $('#btn-open-log').addEventListener('click', () => {
         sfx.click();
         logFilter = 'all';
@@ -1662,9 +1780,22 @@ function wire() {
         if (openLog) openLog.textContent = `📝 View log (${log.length})`;
         toast('Cleared 🧹');
     });
+
+    $('#drill-close') && $('#drill-close').addEventListener('click', () => { sfx.click(); $('#modal-drill').hidden = true; });
+    // click outside drill modal to dismiss
+    $('#modal-drill').addEventListener('click', (e) => {
+        if (e.target === $('#modal-drill')) $('#modal-drill').hidden = true;
+    });
+    // Escape closes any open modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        ['modal-drill', 'modal-hint', 'modal-log', 'modal-profile'].forEach(id => {
+            const m = document.getElementById(id);
+            if (m && !m.hidden) m.hidden = true;
+        });
+    });
 }
 
-// Profile quick-switch modal from home
 function openProfileQuickModal() {
     const m = $('#modal-profile');
     if (!m) return;
@@ -1696,15 +1827,11 @@ function init() {
     $('#profile-quick-close').addEventListener('click', () => { sfx.click(); $('#modal-profile').hidden = true; });
     renderHome();
     show('home');
-    // Register service worker for offline install
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(() => { });
-    }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { });
 }
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
-    // script tag is at end of body -> DOM already parsed
     init();
 }

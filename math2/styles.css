@@ -59,6 +59,14 @@ section.screen {
 
 section.screen[hidden] { display: none; }
 
+#screen-home {
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding: 8px 12px 16px;
+    scrollbar-width: none;
+}
+#screen-home::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
 #screen-setup,
 #screen-end {
     justify-content: flex-start;
@@ -118,9 +126,111 @@ section.screen[hidden] { display: none; }
 .btn.danger { background: #a04b4b; color: white; }
 .btn:disabled { opacity: 0.5; cursor: default; }
 
+.btn.play-primary {
+    font-size: 34px;
+    padding: 22px 50px;
+    min-height: 76px;
+    letter-spacing: 3px;
+    border-radius: 22px;
+    box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15), 0 0 0 6px rgba(6, 214, 160, 0.18);
+    animation: play-pulse 1.9s ease-in-out infinite;
+}
+
+.btn.play-primary:active {
+    animation: none;
+    transform: translateY(4px);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+}
+
+@keyframes play-pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15), 0 0 0 6px rgba(6, 214, 160, 0.18);
+    }
+    50% {
+        transform: scale(1.045);
+        box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15), 0 0 0 16px rgba(6, 214, 160, 0.08);
+    }
+}
+
+.reduced-motion .btn.play-primary { animation: none; }
+
+.btn.drill-btn {
+    background: #eaf5fa;
+    color: var(--blue-dark);
+    border: 2px solid var(--blue);
+    box-shadow: none;
+    font-size: 15px;
+    padding: 10px 16px;
+    min-height: 46px;
+    min-width: 110px;
+    font-weight: 700;
+    border-radius: 14px;
+}
+
+.btn.drill-btn:hover { background: #d9eef4; }
+
+.btn.drill-btn.on {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent-dark);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+}
+
+.btn.drill-btn.on:hover { background: var(--accent-dark); }
+
+/* Drill icon-tile row */
+.drill-icon-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.drill-icon {
+    background: white;
+    border: 2px solid #d0d0d0;
+    color: var(--ink);
+    border-radius: 18px;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    font-family: inherit;
+    padding: 8px 4px;
+    width: 78px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    line-height: 1.1;
+    transition: transform 0.05s;
+}
+.drill-icon:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.08); }
+.drill-icon .drill-op-sym { font-size: 28px; line-height: 1; }
+.drill-icon .drill-label { font-size: 12px; font-weight: 700; opacity: 0.6; letter-spacing: 1px; }
+.drill-icon .drill-base { font-size: 18px; font-weight: 800; color: var(--pink); background: #fff; padding: 1px 8px; border-radius: 10px; margin-top: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+
+.drill-icon.on {
+    background: var(--accent);
+    border-color: var(--accent-dark);
+    color: white;
+}
+.drill-icon.on .drill-label { color: white; opacity: 1; }
+.drill-icon.on .drill-base { color: var(--accent-dark); background: #fffbe6; }
+
+/* Play button subtitle for drill mode */
+.btn.play-primary .play-sub {
+    display: block;
+    font-size: 14px;
+    letter-spacing: 2px;
+    opacity: 0.95;
+    margin-top: 6px;
+    font-weight: 700;
+    text-transform: none;
+}
+
 h1 {
-    font-size: 40px;
-    margin: 6px 0;
+    font-size: 32px;
+    margin: 4px 0;
     text-align: center;
     text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
 }
@@ -128,7 +238,7 @@ h1 {
 h2 { margin: 0 0 10px 0; }
 
 .mascot {
-    font-size: 78px;
+    font-size: 64px;
     line-height: 1;
 }
 
@@ -141,19 +251,19 @@ h2 { margin: 0 0 10px 0; }
 
 .stats-strip {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     justify-content: center;
-    margin: 8px 0 16px;
+    margin: 6px 0 10px;
     flex-wrap: wrap;
 }
 
 .stat {
     background: white;
-    padding: 10px 16px;
-    border-radius: 14px;
+    padding: 8px 12px;
+    border-radius: 12px;
     box-shadow: var(--shadow);
     font-weight: 700;
-    font-size: 20px;
+    font-size: 17px;
 }
 
 .stat small {
@@ -244,6 +354,11 @@ h2 { margin: 0 0 10px 0; }
 }
 
 #hud[hidden] { display: none; }
+
+/* Session-specific pills only show while playing */
+#hud.no-session .pill { display: none; }
+#hud.on-home #btn-home { display: none; }
+#hud.on-setup #btn-gear { display: none; }
 
 #hud .pill {
     background: white;
