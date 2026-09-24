@@ -1,0 +1,15 @@
+{
+  "name": "Maths Champions",
+  "short_name": "Maths",
+  "description": "Kid-friendly mental maths practice with rewards, streaks, and progress tracking.",
+  "start_url": "./Maths_Champions.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffefc7",
+  "theme_color": "#06D6A0",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

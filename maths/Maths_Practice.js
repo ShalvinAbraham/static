@@ -681,15 +681,18 @@ function subHintVisual(a, b) {
 function mulHintVisual(rows, cols) {
     if (rows === 0 || cols === 0) return `<div class="hint">Anything times zero is nothing. 🌟</div>`;
     if (rows * cols > 30) return `<div class="hint">Think of it as ${rows} rows of ${cols}. Count carefully! 🧮</div>`;
-    const icons = pickIcons(rows);
-    const style = `grid-template-columns: repeat(${cols}, auto);`;
+    // aesthetic: prefer wider layout (more columns than rows)
+    let dr = rows, dc = cols;
+    if (dc < dr) { const t = dr; dr = dc; dc = t; }
+    const icons = pickIcons(dr);
+    const style = `grid-template-columns: repeat(${dc}, auto);`;
     let cells = '';
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) cells += `<span>${icons[r]}</span>`;
+    for (let r = 0; r < dr; r++) {
+        for (let c = 0; c < dc; c++) cells += `<span>${icons[r]}</span>`;
     }
     return `
         <div class="icongrid" style="${style}">${cells}</div>
-        <div class="hint">${rows} rows of ${cols}. Count them all! 🧮</div>`;
+        <div class="hint">${rows} × ${cols}. Count them all! 🧮</div>`;
 }
 
 function divHintVisual(a, b) {

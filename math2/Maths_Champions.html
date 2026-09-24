@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Maths Champions</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#06D6A0">
 </head>
 
 <body>
@@ -15,6 +18,7 @@
             <div class="pill" id="hud-score">⭐ 0</div>
             <div class="pill" id="hud-streak">🔥 0</div>
             <div class="pill" id="hud-progress">1/10</div>
+            <div class="pill stars-now" id="hud-stars-now">🎯 ⭐×5</div>
             <div class="spacer"></div>
             <button class="icon-btn" id="btn-sound" title="Sound">🔊</button>
             <button class="icon-btn" id="btn-gear" title="Settings">⚙</button>
@@ -22,22 +26,48 @@
         </header>
 
         <section id="screen-home" class="screen">
+            <div class="profile-bar">
+                <button class="profile-pill" id="profile-pill">👤 Champion</button>
+                <div class="badges">
+                    <div class="badge" id="badge-days">📅 0 days</div>
+                    <div class="badge" id="badge-total">⭐ 0</div>
+                </div>
+            </div>
             <div class="mascot" id="home-mascot">🐬</div>
-            <h1 id="app-title">Maths Champions</h1>
+            <h1 id="home-title">Maths Champions</h1>
+            <div class="greeting" id="home-tagline" style="font-size:15px; opacity:.6;">Mental maths, one champion at a time.</div>
             <div class="greeting" id="home-greeting"></div>
             <div class="stats-strip" id="home-stats"></div>
+
+            <div class="chip-row" id="home-playmode-chips" style="justify-content:center; margin-bottom:8px;"></div>
+
             <div class="home-actions">
-                <button class="btn" id="btn-play">▶ Play</button>
+                <button class="btn accent" id="btn-play" style="font-size:22px; padding:16px 28px;">▶ Play</button>
                 <button class="btn secondary" id="btn-focus" hidden>🎯 Focus on Tricky</button>
                 <button class="btn info" id="btn-home-cert" hidden>🏆 Certificate</button>
                 <button class="btn ghost" id="btn-setup">⚙ Settings</button>
             </div>
-            <p style="opacity:.6; margin-top:14px;">Tap Play to start. Great on a tablet 📱</p>
+            <p style="opacity:.6; margin-top:14px; text-align:center;">Tap your name to switch profile. Great on a tablet 📱</p>
         </section>
 
         <section id="screen-setup" class="screen" hidden>
-            <div class="setup-card">
-                <h2>Pick what to practice</h2>
+            <div class="card">
+                <h2>⚙ Grown-up Settings</h2>
+
+                <div class="group">
+                    <div class="group-title">👤 Profiles</div>
+                    <div id="profile-list" class="profile-list"></div>
+                    <div class="data-row">
+                        <button class="btn info" id="btn-new-profile">➕ New profile</button>
+                    </div>
+                    <div class="group-sub">Each profile has its own stars, streaks, weak facts, and log. Perfect for siblings.</div>
+                </div>
+
+                <div class="group">
+                    <div class="group-title">🎮 Play mode</div>
+                    <div class="chip-row" id="playmode-chips"></div>
+                    <div id="play-mode-extras" style="margin-top:8px;"></div>
+                </div>
 
                 <div class="group">
                     <div class="group-title">Operations (pick one or more)</div>
@@ -50,12 +80,17 @@
                 </div>
 
                 <div class="group">
+                    <div class="group-title">Adaptive difficulty</div>
+                    <div class="chip-row" id="adaptive-chips"></div>
+                    <div class="group-sub">Auto-nudges harder after 5 correct in a row; easier after 3 misses.</div>
+                </div>
+
+                <div class="group">
                     <div class="group-title">How many questions per practice session?</div>
                     <div class="chip-row" id="len-chips"></div>
                     <div style="margin-top:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                         <span>or a custom number:</span>
-                        <input type="number" id="input-length" class="text-input" min="1" max="999"
-                            style="max-width:120px;" placeholder="e.g. 20">
+                        <input type="number" id="input-length" class="text-input" min="1" max="999" style="max-width:120px;" placeholder="e.g. 20">
                     </div>
                 </div>
 
@@ -71,69 +106,70 @@
                 </div>
 
                 <div class="group">
-
-                    <div class="group-title">Hint icons 🐬</div>
-                    <div class="chip-row" id="icon-chips"></div>
-                    <div class="group-sub">Used in visual hints.</div>
-                </div>
-
-                <div class="group">
-                    <div class="group-title">Allow negative answers</div>
-                    <div class="chip-row" id="neg-chips"></div>
-                    <div class="group-sub">Off by default. When on, subtraction can go below zero (e.g. 3 − 8 = −5).</div>
-                </div>
-
-                <div class="group">
                     <div class="group-title">Star rewards ⭐</div>
                     <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
-                        <label>Max per question:
-                            <input type="number" id="input-star-max" min="1" max="999" class="text-input"
-                                style="max-width:100px;">
-                        </label>
-                        <label>Lose per mistake:
-                            <input type="number" id="input-star-step" min="1" max="999" class="text-input"
-                                style="max-width:100px;">
-                        </label>
+                        <label>Max per question: <input type="number" id="input-star-max" min="1" max="999" class="text-input" style="max-width:100px;"></label>
+                        <label>Lose per mistake: <input type="number" id="input-star-step" min="1" max="999" class="text-input" style="max-width:100px;"></label>
                     </div>
                     <div class="group-sub">Streak multiplies too! 5-in-a-row = ×2, 10 = ×4, 15 = ×6, 20+ = ×10.</div>
                 </div>
 
                 <div class="group">
-                    <div class="group-title">Grown-up code 🔒</div>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                        <input type="password" id="input-new-password" class="text-input" placeholder="New code"
-                            style="max-width:200px;" autocomplete="new-password">
-                        <button class="btn" id="btn-save-password">Save code</button>
-                    </div>
-                    <div class="group-sub">Default is <code>12345</code>. Change it to something a child won't guess. Prompted every time Settings is opened.</div>
+                    <div class="group-title">Hint icons 🐬</div>
+                    <div class="chip-row" id="icon-chips"></div>
+                    <div class="group-sub">Used in visual hints. Fresh combinations every time.</div>
                 </div>
 
                 <div class="group">
-                    <div class="group-title">Child's name (optional)</div>
-                    <input type="text" id="input-child-name" class="text-input" maxlength="24"
-                        placeholder="e.g. Champion" autocomplete="off">
-                    <div class="group-sub">Shown on the home screen and the certificate.</div>
+                    <div class="group-title">Allow negative answers</div>
+                    <div class="chip-row" id="neg-chips"></div>
+                </div>
+
+                <div class="group">
+                    <div class="group-title">Sound</div>
+                    <div class="chip-row" id="sound-chips"></div>
+                </div>
+
+                <div class="group">
+                    <div class="group-title">Read questions aloud (voice) 🗣</div>
+                    <div class="chip-row" id="voice-chips"></div>
+                    <div class="group-sub">Uses your device's built-in text-to-speech.</div>
+                </div>
+
+                <div class="group">
+                    <div class="group-title">Reduced motion</div>
+                    <div class="chip-row" id="rm-chips"></div>
+                    <div class="group-sub">Disables shake/confetti animations for easier focus.</div>
+                </div>
+
+                <div class="group">
+                    <div class="group-title">Grown-up code 🔒</div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <input type="password" id="input-new-password" class="text-input" placeholder="New code" style="max-width:200px;" autocomplete="new-password">
+                        <button class="btn" id="btn-save-password">Save code</button>
+                    </div>
+                    <div class="group-sub">Default is <code>12345</code>. Change it so children can't guess.</div>
                 </div>
 
                 <div class="group">
                     <div class="group-title">Performance log 📝 <span style="opacity:.6; font-weight:normal;">(parent review)</span></div>
-                    <button class="btn" id="btn-open-log" style="background:var(--blue);">📝 View log</button>
-                    <div class="group-sub">All questions answered — correct, missed, skipped, with points earned.</div>
+                    <button class="btn info" id="btn-open-log">📝 View log</button>
+                    <div class="group-sub">All questions this profile has answered — correct, missed, skipped, with points earned.</div>
                 </div>
 
                 <div class="group">
                     <div class="group-title">Data</div>
                     <div class="data-row">
-                        <button class="btn secondary" id="btn-export">📤 Export</button>
+                        <button class="btn secondary" id="btn-export">📤 Export (all profiles)</button>
                         <button class="btn secondary" id="btn-import">📥 Import</button>
-                        <button class="btn" id="btn-reset" style="background:#a04b4b;">🗑 Reset all data</button>
+                        <button class="btn danger" id="btn-reset-profile">🗑 Reset this profile</button>
+                        <button class="btn danger" id="btn-reset-all">🔥 Reset everything</button>
                         <input type="file" id="file-import" accept="application/json" hidden>
                     </div>
-                    <div class="group-sub">Save or restore progress (stars, streaks, tricky facts, settings). Reset wipes everything on this device.</div>
                 </div>
 
                 <div style="display:flex; gap:10px; margin-top: 14px; flex-wrap: wrap; align-items:center;">
-                    <button class="btn accent" id="btn-start">▶ Start</button>
+                    <button class="btn accent" id="btn-start">▶ Start playing</button>
                     <button class="btn done" id="btn-back-home">🏠 Done</button>
                     <span style="opacity:.6; font-size:14px;">Changes save automatically.</span>
                 </div>
@@ -162,9 +198,9 @@
                 <div id="end-stats"></div>
                 <div id="missed-wrap"></div>
                 <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top: 14px;">
-                    <button class="btn" id="btn-again">↺ Play Again</button>
-                    <button class="btn accent" id="btn-focus-end" hidden>🎯 Practice Tricky</button>
-                    <button class="btn secondary" id="btn-cert">🏆 Certificate</button>
+                    <button class="btn accent" id="btn-again">↺ Play Again</button>
+                    <button class="btn secondary" id="btn-focus-end" hidden>🎯 Practice Tricky</button>
+                    <button class="btn info" id="btn-cert">🏆 Certificate</button>
                     <button class="btn ghost" id="btn-end-home">🏠 Home</button>
                 </div>
             </div>
@@ -174,7 +210,8 @@
     <canvas id="confetti"></canvas>
     <div class="toast" id="toast"></div>
 
-    <div id="modal-backdrop" hidden>
+    <!-- Password modal -->
+    <div id="modal-password" class="modal-backdrop" hidden>
         <div class="modal">
             <h3>🔒 Grown-up code</h3>
             <p style="opacity:.7; margin:6px 0;">Enter the code to open Settings.</p>
@@ -187,7 +224,8 @@
         </div>
     </div>
 
-    <div id="hint-modal-backdrop" hidden>
+    <!-- Hint modal -->
+    <div id="modal-hint" class="modal-backdrop" hidden>
         <div class="modal hint-modal">
             <div style="display:flex; align-items:center; gap:10px;">
                 <h3 style="flex:1; margin:0;">💡 Hint</h3>
@@ -197,21 +235,35 @@
         </div>
     </div>
 
-    <div id="log-modal-backdrop" hidden>
+    <!-- Log modal -->
+    <div id="modal-log" class="modal-backdrop" hidden>
         <div class="modal log-modal">
             <div style="display:flex; align-items:center; gap:10px;">
                 <h3 style="flex:1; margin:0;">📝 Question log</h3>
                 <button class="btn ghost" id="btn-log-close">✖ Close</button>
             </div>
-            <div style="opacity:.6; font-size:13px; margin:4px 0 8px;">Green rows = correct (with points earned). Red rows = missed, skipped, or answer shown. 💡 = hint used.</div>
-            <div id="failed-list" style="max-height:60vh; overflow-y:auto; padding:8px 12px; background:#f8f8f8; border-radius:10px; font-size:14px; border:1px solid #eee;"></div>
+            <div id="log-header" style="margin:4px 0;"></div>
+            <div class="log-filter-row" id="log-filters"></div>
+            <div id="log-list"></div>
             <div style="margin-top:10px; display:flex; gap:10px; justify-content:flex-end;">
-                <button class="btn ghost" id="btn-clear-failed">🧹 Clear log</button>
+                <button class="btn ghost" id="btn-clear-log">🧹 Clear log</button>
             </div>
         </div>
     </div>
 
-    <script src="Maths_Practice.js"></script>
+    <!-- Profile quick-switch modal -->
+    <div id="modal-profile" class="modal-backdrop" hidden>
+        <div class="modal profile-modal">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <h3 style="flex:1; margin:0;">👤 Switch profile</h3>
+                <button class="btn ghost" id="profile-quick-close">✖ Close</button>
+            </div>
+            <div id="profile-quick-list" style="margin-top:10px;"></div>
+            <div class="group-sub" style="margin-top:10px;">To add or delete profiles, open Settings.</div>
+        </div>
+    </div>
+
+    <script src="Maths_Champions.js"></script>
 </body>
 
 </html>
