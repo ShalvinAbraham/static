@@ -313,6 +313,14 @@ function opSym(op) {
     return op;
 }
 
+function opName(op) {
+    if (op === '*') return 'Multiplication';
+    if (op === '/') return 'Division';
+    if (op === '+') return 'Addition';
+    if (op === '-') return 'Subtraction';
+    return op;
+}
+
 function pickFromWeak() {
     if (!weak.length) return null;
     const total = weak.reduce((s, w) => s + w.misses, 0);
@@ -356,7 +364,10 @@ function makeQuestion(focusWeak = false) {
                 return null;
             }
         }
-        return session.drillQueue[session.drillIndex++];
+        const queueIndex = session.drillIndex + rng(0, session.drillQueue.length - session.drillIndex - 1);
+        const question = session.drillQueue[queueIndex];
+        session.drillQueue.splice(queueIndex, 1);
+        return question;
     }
 
     const src = focusWeak ? pickFromWeak() : null;
@@ -553,10 +564,10 @@ function startTableDrill(op, base) {
 
     let queue;
     if (target === Infinity) {
-        queue = pool.slice();
+        queue = shuffle(pool);
     } else {
         queue = [];
-        while (queue.length < target) queue = queue.concat(pool.slice());
+        while (queue.length < target) queue = queue.concat(shuffle(pool));
         queue = queue.slice(0, target);
     }
     session = {
@@ -582,6 +593,14 @@ function startTableDrill(op, base) {
     };
     show('play');
     nextQuestion();
+}
+
+function restartLastSession() {
+    if (session && session.drillMode) {
+        startTableDrill(session.drillMode.op, session.drillMode.base);
+    } else {
+        newSession({ focusWeak: !!(session && session.focusWeak) });
+    }
 }
 
 function startTimer() {
@@ -989,14 +1008,16 @@ function subHintVisual(a, b) {
 function mulHintVisual(rows, cols) {
     if (rows === 0 || cols === 0) return `<div class="hint">Anything times zero is nothing. 🌟</div>`;
     if (rows * cols > 30) return `<div class="hint">Think of it as ${rows} rows of ${cols}. 🧮</div>`;
-    const [p, s] = pickIcons(2);
+    const icons = pickIcons(rows);
+    const groups = [];
+    for (let group = 0; group < rows; group++) {
+        let inner = '';
+        for (let item = 0; item < cols; item++) inner += `<span>${icons[group]}</span>`;
+        groups.push(`<div class="igroup">${inner}</div>`);
+    }
     return `
-        <div class="iconrow stacked">
-            <div class="iconrow-line">${iconSpans(rows, p)}</div>
-            <div class="connector">×</div>
-            <div class="iconrow-line">${iconSpans(cols, s)}</div>
-        </div>
-        <div class="hint">${rows} × ${cols}. Count them all! 🧮</div>`;
+        <div class="icongroups">${groups.join('')}</div>
+        <div class="hint">${rows} groups of ${cols}. Count them all! 🧮</div>`;
 }
 function divHintVisual(a, b) {
     if (b === 0 || a === 0 || a > 30) return `<div class="hint">Share ${a} into ${b} equal groups. 🧮</div>`;
@@ -1516,17 +1537,17 @@ function openDrillModal(op) {
     let bases = (settings.opRanges[op] && settings.opRanges[op].left) || [];
     if (op === '/') bases = bases.filter(v => v > 0);
     bases = bases.slice().sort((a, b) => a - b);
-    $('#drill-title').textContent = `Pick a number: ${opSym(op)} table`;
-    $('#drill-desc').textContent = op === '/' ? 'Divisor to practice (fixed part of each question):' : 'Base number to practice (fixed part of each question):';
+    $('#drill-title').innerHTML = `Pick the number to practice <span class="drill-op-name">${opName(op)}</span> table`;
+    //$('#drill-desc').textContent = op === '/' ? 'Divisor to practice (fixed part of each question):' : 'Base number to practice (fixed part of each question):';
     if (!bases.length) {
         $('#drill-base-chips').innerHTML = `<div style="opacity:.7;">No base numbers are selected in Settings for ${opSym(op)}. Open Settings → operand ranges to enable some.</div>`;
     } else {
         $('#drill-base-chips').innerHTML = bases.map(v =>
-            `<button class="chip" data-base="${v}" style="font-size:22px; min-width:52px;">${v}</button>`
+            `<button class="option-chip" data-base="${v}">${v}</button>`
         ).join('');
     }
     $('#drill-base-chips').onclick = (e) => {
-        const b = e.target.closest('.chip[data-base]');
+        const b = e.target.closest('.option-chip[data-base]');
         if (!b) return;
         const base = parseInt(b.dataset.base, 10);
         sfx.click();
@@ -1543,7 +1564,7 @@ function renderPlayLabel() {
     if (!b) return;
     const ad = settings.activeDrill;
     if (ad) {
-        b.innerHTML = `▶ PLAY<span class="play-sub">${opSym(ad.op)} Table of ${ad.base}</span>`;
+        b.innerHTML = '▶ PLAY' //`▶ PLAY<span class="play-sub">${opSym(ad.op)} Table of ${ad.base}</span>`;
     } else {
         b.textContent = '▶ PLAY';
     }
@@ -1723,7 +1744,7 @@ function wire() {
         nextQuestion();
     });
 
-    $('#btn-again').addEventListener('click', () => { sfx.click(); show('play'); newSession(); });
+    $('#btn-again').addEventListener('click', () => { sfx.click(); show('play'); restartLastSession(); });
     $('#btn-focus-end').addEventListener('click', () => { sfx.click(); show('play'); newSession({ focusWeak: true }); });
     $('#btn-end-home').addEventListener('click', () => { sfx.click(); renderHome(); show('home'); });
     $('#btn-cert').addEventListener('click', () => { sfx.click(); openCertificate(); });

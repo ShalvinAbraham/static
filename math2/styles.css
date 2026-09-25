@@ -184,8 +184,12 @@ section.screen[hidden] { display: none; }
 .drill-icon-row {
     display: flex;
     justify-content: center;
+    align-items: center;
+    align-content: center;
     gap: 10px;
     flex-wrap: wrap;
+    margin: 20px;
+    min-height: 90px;
 }
 
 .drill-icon {
@@ -198,9 +202,11 @@ section.screen[hidden] { display: none; }
     font-family: inherit;
     padding: 8px 4px;
     width: 78px;
+    min-height: 86px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 2px;
     line-height: 1.1;
     transition: transform 0.05s;
@@ -209,7 +215,6 @@ section.screen[hidden] { display: none; }
 .drill-icon .drill-op-sym { font-size: 28px; line-height: 1; }
 .drill-icon .drill-label { font-size: 12px; font-weight: 700; opacity: 0.6; letter-spacing: 1px; }
 .drill-icon .drill-base { font-size: 18px; font-weight: 800; color: var(--pink); background: #fff; padding: 1px 8px; border-radius: 10px; margin-top: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
-
 .drill-icon.on {
     background: var(--accent);
     border-color: var(--accent-dark);
@@ -217,6 +222,12 @@ section.screen[hidden] { display: none; }
 }
 .drill-icon.on .drill-label { color: white; opacity: 1; }
 .drill-icon.on .drill-base { color: var(--accent-dark); background: #fffbe6; }
+
+.drill-op-name {
+    font-size: 19px;
+    font-weight: 1000;
+    color: var(--blue-dark);
+}
 
 /* Play button subtitle for drill mode */
 .btn.play-primary .play-sub {
@@ -299,6 +310,7 @@ h2 { margin: 0 0 10px 0; }
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    padding: 20px;
 }
 
 .chip {
@@ -311,6 +323,20 @@ h2 { margin: 0 0 10px 0; }
     cursor: pointer;
     border: 3px solid transparent;
     min-height: 44px;
+}
+
+.option-chip {
+    font-family: inherit;
+    font-size: 17px;
+    padding: 10px 16px;
+    border-radius: 15px;
+    background: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 44px;
+    border: 3px solid #ddd;
+    font-size: 22px;
+    min-width: 52px;
 }
 
 #screen-home .chip {
