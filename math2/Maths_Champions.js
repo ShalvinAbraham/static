@@ -54,6 +54,7 @@ const defaultSettings = {
     playMode: 'standard',            // 'standard' | 'missing' | 'timed'
     timeLimit: START_TIME_LIMIT,
     activeDrill: null,               // null OR { op, base } — what PLAY starts when set
+    hintPopup: false,                // false = show hint inline on the play screen; true = show in a popup
 
     // Per-operation operand pools (multi-select 0..15).
     // For + - *: left = a, right = b in `a op b`.
@@ -350,7 +351,7 @@ function makeQuestion(focusWeak = false) {
     if (session && session.drillMode) {
         if (session.drillIndex >= session.drillQueue.length) {
             if (session.target === Infinity && session.drillPool && session.drillPool.length) {
-                session.drillQueue = session.drillQueue.concat(shuffle(session.drillPool.slice()));
+                session.drillQueue = session.drillQueue.concat(session.drillPool.slice());
             } else {
                 return null;
             }
@@ -387,16 +388,18 @@ function standardAns(a, b, op) {
 // Build the ordered drill queue for base against all admin-allowed 'other' values.
 function buildDrillQueue(op, base) {
     const r = opRange(op);
-    const others = shuffle((r.right || []).slice());
+    // Keep ascending order (not shuffled) so the table reads 1,2,3...N.
+    const others = (r.right || []).slice().sort((x, y) => x - y);
     const queue = [];
     for (const other of others) {
-        if (op === '+') queue.push({ a: base, b: other, op, ans: base + other, ask: 'ans' });
+        // For + - *, show the varying number first and the table base second (e.g. 3+2, 3-2, 3*2).
+        if (op === '+') queue.push({ a: other, b: base, op, ans: other + base, ask: 'ans' });
         else if (op === '-') {
-            let a = base, b = other;
-            if (!settings.allowNegative && b > a) continue;
+            let a = other, b = base;
+            if (!settings.allowNegative && a < b) continue;
             queue.push({ a, b, op, ans: a - b, ask: 'ans' });
         }
-        else if (op === '*') queue.push({ a: base, b: other, op, ans: base * other, ask: 'ans' });
+        else if (op === '*') queue.push({ a: other, b: base, op, ans: other * base, ask: 'ans' });
         else if (op === '/') {
             // base = divisor, other = quotient; question is (base*other) ÷ base = other
             queue.push({ a: base * other, b: base, op, ans: other, ask: 'ans' });
@@ -550,10 +553,10 @@ function startTableDrill(op, base) {
 
     let queue;
     if (target === Infinity) {
-        queue = shuffle(pool.slice());
+        queue = pool.slice();
     } else {
         queue = [];
-        while (queue.length < target) queue = queue.concat(shuffle(pool.slice()));
+        while (queue.length < target) queue = queue.concat(pool.slice());
         queue = queue.slice(0, target);
     }
     session = {
@@ -963,10 +966,10 @@ function addHintVisual(a, b) {
     if (a + b > 24) return `<div class="hint">Count on from the bigger number. Add tens first, then ones. 🧮</div>`;
     const [p, s] = pickIcons(2);
     return `
-        <div class="iconrow">
-            ${iconSpans(a, p)}
-            <span class="connector">+</span>
-            ${iconSpans(b, s)}
+        <div class="iconrow stacked">
+            <div class="iconrow-line">${iconSpans(a, p)}</div>
+            <div class="connector">+</div>
+            <div class="iconrow-line">${iconSpans(b, s)}</div>
         </div>
         <div class="hint">Count them all! 🧮</div>`;
 }
@@ -986,14 +989,13 @@ function subHintVisual(a, b) {
 function mulHintVisual(rows, cols) {
     if (rows === 0 || cols === 0) return `<div class="hint">Anything times zero is nothing. 🌟</div>`;
     if (rows * cols > 30) return `<div class="hint">Think of it as ${rows} rows of ${cols}. 🧮</div>`;
-    let dr = rows, dc = cols;
-    if (dc < dr) { const t = dr; dr = dc; dc = t; }
-    const icons = pickIcons(dr);
-    const style = `grid-template-columns: repeat(${dc}, auto);`;
-    let cells = '';
-    for (let r = 0; r < dr; r++) for (let c = 0; c < dc; c++) cells += `<span>${icons[r]}</span>`;
+    const [p, s] = pickIcons(2);
     return `
-        <div class="icongrid" style="${style}">${cells}</div>
+        <div class="iconrow stacked">
+            <div class="iconrow-line">${iconSpans(rows, p)}</div>
+            <div class="connector">×</div>
+            <div class="iconrow-line">${iconSpans(cols, s)}</div>
+        </div>
         <div class="hint">${rows} × ${cols}. Count them all! 🧮</div>`;
 }
 function divHintVisual(a, b) {
@@ -1280,8 +1282,8 @@ const PLAY_MODES = [
 ];
 const TIME_LIMITS = [30, 45, 60, 90, 120].map(v => ({ v, label: `${v}s` }));
 const YESNO = [
-    { v: false, label: 'No' },
     { v: true, label: 'Yes' },
+    { v: false, label: 'No' },
 ];
 
 function renderChips(rootSel, items, current, multi, extraClass = '', onChange = null) {
@@ -1343,10 +1345,10 @@ function renderOpRanges() {
         const rightItems = o.rightPool.map(v => ({ v, label: String(v) }));
         const opRef = o.op;
         renderChips(`#oprange-left-${alias}`, leftItems, (settings.opRanges[opRef] && settings.opRanges[opRef].left) || [], true, '', v => {
-            settings.opRanges[opRef].left = v;
+            settings.opRanges[opRef].left = v.slice().sort((a, b) => a - b);
         });
         renderChips(`#oprange-right-${alias}`, rightItems, (settings.opRanges[opRef] && settings.opRanges[opRef].right) || [], true, '', v => {
-            settings.opRanges[opRef].right = v;
+            settings.opRanges[opRef].right = v.slice().sort((a, b) => a - b);
         });
     }
 }
@@ -1416,6 +1418,7 @@ function renderSetup() {
     renderChips('#sound-chips', YESNO, !!settings.sound, false, '', v => { settings.sound = v; $('#btn-sound').textContent = settings.sound ? '🔊' : '🔇'; });
     renderChips('#voice-chips', YESNO, !!settings.voice, false, '', v => { settings.voice = v; });
     renderChips('#rm-chips', YESNO, !!settings.reducedMotion, false, '', v => { settings.reducedMotion = v; applyReducedMotion(); });
+    renderChips('#hintpopup-chips', YESNO, !!settings.hintPopup, false, '', v => { settings.hintPopup = v; });
 
     $('#input-length').value = (typeof settings.length === 'number') ? settings.length : '';
     $('#input-star-max').value = settings.starMax;
@@ -1468,6 +1471,13 @@ function renderHome() {
     ensureProfile();
     const p = activeProfile();
     $('#profile-pill').textContent = `👤 ${p.name}`;
+    const pillBtn = $('#profile-pill');
+    if (pillBtn) {
+        const canSwitch = profiles.length > 1;
+        pillBtn.style.pointerEvents = canSwitch ? '' : 'none';
+        pillBtn.style.cursor = canSwitch ? '' : 'default';
+        pillBtn.title = canSwitch ? 'Switch profile' : '';
+    }
     $('#badge-days').textContent = `📅 ${daily.streakDays || 0} day${(daily.streakDays === 1) ? '' : 's'}`;
     $('#badge-total').textContent = `⭐ ${stats.totalStars}`;
     $('#home-title').textContent = APP_NAME;
@@ -1482,6 +1492,7 @@ function renderHome() {
     $('#btn-focus').hidden = weak.length === 0;
     $('#btn-home-cert').hidden = !(stats.played > 0 || stats.totalStars > 0);
     const tip = $('#home-tip'); if (tip) tip.hidden = profiles.length <= 1;
+    updateVoiceToggle();
     renderChips('#home-playmode-chips', PLAY_MODES,
         settings.activeDrill ? '__none__' : (settings.playMode || 'standard'),
         false, '', v => {
@@ -1504,6 +1515,7 @@ function openDrillModal(op) {
     if (!m) return;
     let bases = (settings.opRanges[op] && settings.opRanges[op].left) || [];
     if (op === '/') bases = bases.filter(v => v > 0);
+    bases = bases.slice().sort((a, b) => a - b);
     $('#drill-title').textContent = `Pick a number: ${opSym(op)} table`;
     $('#drill-desc').textContent = op === '/' ? 'Divisor to practice (fixed part of each question):' : 'Base number to practice (fixed part of each question):';
     if (!bases.length) {
@@ -1672,8 +1684,13 @@ function wire() {
             session.currentStars = Math.max(1, session.currentStars - starStep());
             updateHud();
         }
-        showHintInto($('#hint-modal-content'), false);
-        $('#modal-hint').hidden = false;
+        if (settings.hintPopup) {
+            showHintInto($('#hint-modal-content'), false);
+            $('#modal-hint').hidden = false;
+        } else {
+            showHintInto($('#hint-slot'), false);
+            $('#hint-slot').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     });
     $('#btn-hint-close').addEventListener('click', () => { sfx.click(); $('#modal-hint').hidden = true; });
 

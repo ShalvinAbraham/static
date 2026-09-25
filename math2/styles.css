@@ -129,6 +129,7 @@ section.screen[hidden] { display: none; }
 .btn.play-primary {
     font-size: 34px;
     padding: 22px 50px;
+    margin-bottom: 15px;
     min-height: 76px;
     letter-spacing: 3px;
     border-radius: 22px;
@@ -189,7 +190,7 @@ section.screen[hidden] { display: none; }
 
 .drill-icon {
     background: white;
-    border: 2px solid #d0d0d0;
+    border: 2px transparent solid;
     color: var(--ink);
     border-radius: 18px;
     box-shadow: 0 3px 0 rgba(0, 0, 0, 0.08);
@@ -305,11 +306,20 @@ h2 { margin: 0 0 10px 0; }
     font-size: 17px;
     padding: 10px 16px;
     border-radius: 999px;
-    background: #f0f0f0;
+    background: #fff;
     font-weight: 700;
     cursor: pointer;
     border: 3px solid transparent;
     min-height: 44px;
+}
+
+#screen-home .chip {
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.08);
+    transition: transform 0.05s;
+}
+#screen-home .chip:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
 }
 
 .chip.on {
@@ -324,6 +334,14 @@ h2 { margin: 0 0 10px 0; }
     min-width: 50px;
     text-align: center;
     line-height: 1;
+}
+
+#screen-setup .chip {
+    border: 2px solid #ddd;
+}
+
+#screen-setup .chip.on {
+    border-color: var(--accent-dark);
 }
 
 .text-input {
@@ -538,6 +556,15 @@ h2 { margin: 0 0 10px 0; }
 
 .hint.learn-box { background: #e6f7ff; }
 
+.hint-x-close {
+    color: #e63946;
+    border-color: #e63946;
+    font-weight: 900;
+    font-size: 18px;
+    line-height: 1;
+    padding: 6px 10px;
+}
+
 .iconrow {
     display: flex;
     flex-wrap: wrap;
@@ -548,6 +575,18 @@ h2 { margin: 0 0 10px 0; }
     max-width: 100%;
     font-size: clamp(18px, 3.5vw, 28px);
     line-height: 1.1;
+}
+
+.iconrow.stacked {
+    flex-direction: column;
+    gap: 4px;
+}
+
+.iconrow.stacked .iconrow-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    justify-content: center;
 }
 
 .iconrow .connector {
@@ -833,3 +872,9 @@ h2 { margin: 0 0 10px 0; }
 /* Timer pill in HUD */
 #hud .pill.timer { background: var(--pink); color: white; }
 #hud .pill.stars-now { background: var(--yellow); color: var(--ink); }
+
+/* Flat look for the admin (setup) screen — no drop shadows anywhere */
+#screen-setup,
+#screen-setup * {
+    box-shadow: none !important;
+}

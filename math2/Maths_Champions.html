@@ -146,6 +146,12 @@
                 </div>
 
                 <div class="group">
+                    <div class="group-title">Show hint as a popup?</div>
+                    <div class="chip-row" id="hintpopup-chips"></div>
+                    <div class="group-sub">Default is No — the hint appears right on the play screen instead of a separate popup.</div>
+                </div>
+
+                <div class="group">
                     <div class="group-title">Grown-up code 🔒</div>
                     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                         <input type="password" id="input-new-password" class="text-input" placeholder="New code" style="max-width:200px;" autocomplete="new-password">
@@ -232,7 +238,7 @@
         <div class="modal hint-modal">
             <div style="display:flex; align-items:center; gap:10px;">
                 <h3 style="flex:1; margin:0;">💡 Hint</h3>
-                <button class="btn ghost" id="btn-hint-close">✖ Close</button>
+                <button class="btn ghost hint-x-close" id="btn-hint-close" title="Close">✖</button>
             </div>
             <div id="hint-modal-content" style="margin-top:10px; max-height:60vh; overflow-y:auto;"></div>
         </div>
