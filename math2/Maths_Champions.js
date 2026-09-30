@@ -44,13 +44,14 @@ const defaultSettings = {
     modes: ['type', 'choice', 'truefalse'],
     sound: true,
     voice: false,
-    voiceEnabled: true,   // child-side toggle (only meaningful when voice is on)
+    voiceEnabled: true,
     reducedMotion: false,
     iconPrimary: '🐬',
     allowNegative: false,
     starMax: 5,
     starStep: 1,
     numChoices: 4,
+    shuffleDistractors: false,
     playMode: 'standard',            // 'standard' | 'missing' | 'timed'
     timeLimit: START_TIME_LIMIT,
     activeDrill: null,               // null OR { op, base } — what PLAY starts when set
@@ -435,7 +436,8 @@ function distractors(q, n = 3) {
     let guard = 0;
     while (set.size < n + 4 && guard++ < 80) push(target + rng(-6, 6));
     const arr = [...set].filter(v => v !== target);
-    arr.sort(() => Math.random() - 0.5);
+    if (settings.shuffleDistractors) return shuffle(arr).slice(0, Math.max(1, n));
+    arr.sort((a, b) => a - b);
     return arr.slice(0, Math.max(1, n));
 }
 
@@ -1016,7 +1018,7 @@ function mulHintVisual(rows, cols) {
         groups.push(`<div class="igroup">${inner}</div>`);
     }
     return `
-        <div class="icongroups">${groups.join('')}</div>
+        <div class="icongroups multiplication-groups">${groups.join('')}</div>
         <div class="hint">${rows} groups of ${cols}. Count them all! 🧮</div>`;
 }
 function divHintVisual(a, b) {
@@ -1434,6 +1436,7 @@ function renderSetup() {
     });
     renderChips('#mode-chips', MODES, settings.modes, true, '', v => { settings.modes = v; });
     renderChips('#choices-chips', CHOICES, parseInt(settings.numChoices, 10) || 4, false, '', v => { settings.numChoices = v; });
+    renderChips('#shuffle-distractors-chips', YESNO, !!settings.shuffleDistractors, false, '', v => { settings.shuffleDistractors = v; });
     renderChips('#icon-chips', ICON_CHOICES.map(v => ({ v, label: v })), settings.iconPrimary, false, 'icon-chip', v => { settings.iconPrimary = v; });
     renderChips('#neg-chips', YESNO, !!settings.allowNegative, false, '', v => { settings.allowNegative = v; });
     renderChips('#sound-chips', YESNO, !!settings.sound, false, '', v => { settings.sound = v; $('#btn-sound').textContent = settings.sound ? '🔊' : '🔇'; });

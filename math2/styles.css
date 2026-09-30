@@ -129,7 +129,7 @@ section.screen[hidden] { display: none; }
 .btn.play-primary {
     font-size: 34px;
     padding: 22px 50px;
-    margin-bottom: 15px;
+    margin-bottom: 25px;
     min-height: 76px;
     letter-spacing: 3px;
     border-radius: 22px;
@@ -655,6 +655,19 @@ h2 { margin: 0 0 10px 0; }
     gap: 3px;
     font-size: clamp(16px, 3vw, 24px);
     line-height: 1.1;
+}
+
+.multiplication-groups {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.multiplication-groups .igroup {
+    max-width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
 }
 
 .play-actions {
