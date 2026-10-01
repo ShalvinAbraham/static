@@ -436,9 +436,7 @@ function distractors(q, n = 3) {
     let guard = 0;
     while (set.size < n + 4 && guard++ < 80) push(target + rng(-6, 6));
     const arr = [...set].filter(v => v !== target);
-    if (settings.shuffleDistractors) return shuffle(arr).slice(0, Math.max(1, n));
-    arr.sort((a, b) => a - b);
-    return arr.slice(0, Math.max(1, n));
+    return shuffle(arr).slice(0, Math.max(1, n));
 }
 
 function shuffle(arr) {
@@ -763,7 +761,8 @@ function renderPlay() {
         buildKeypad();
     } else if (session.currentMode === 'choice') {
         const total = Math.min(9, Math.max(2, parseInt(settings.numChoices, 10) || 4));
-        const opts = shuffle([q[q.ask], ...distractors(q, total - 1)]);
+        var opts = [q[q.ask], ...distractors(q, total - 1)];
+        opts = settings.shuffleDistractors ? shuffle(opts) : opts.sort((a, b) => a - b);
         const cols = total >= 5 ? 3 : 2;
         body.innerHTML = `<div class="choices" style="grid-template-columns: repeat(${cols}, 1fr);">${opts.map((v, i) =>
             `<button class="choice c${i % 4}" data-val="${v}">${v}</button>`).join('')
