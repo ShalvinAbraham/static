@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events Countdown</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@pqina/flip@1.8.4/dist/flip.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <main class="counters"></main>
+
+    <template id="card-tpl">
+        <section class="card">
+            <div class="head">
+                <h2 class="title"></h2>
+                <span class="badge">Counting down</span>
+                <time class="target"></time>
+            </div>
+            <div class="clock">
+                <div class="face">
+                    <span class="sign" aria-hidden="true">+</span>
+                    <div class="tick" data-did-init="handleTickInit" data-credits="false">
+                        <div data-repeat="true" data-layout="horizontal center" data-transform="delay" aria-hidden="true">
+                            <div class="tick-group">
+                                <div data-key="value" data-repeat="true" data-transform="pad(00) -> split -> delay">
+                                    <span data-view="flip" data-style="flip-easing: ease-out-cubic"></span>
+                                </div>
+                                <span data-key="label" data-view="text" class="tick-label"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="arrival" aria-live="polite"></p>
+        </section>
+    </template>
+
+    <template id="edit-btn-tpl">
+        <button type="button" class="controls" aria-label="Edit Events" title="Edit Events">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+            </svg>
+        </button>
+    </template>
+
+    <dialog id="editor" aria-labelledby="editor-title">
+        <form id="settings">
+            <h3 id="editor-title" tabindex="-1" autofocus>Edit Events</h3>
+            <div id="rows"></div>
+            <div class="form-actions">
+                <div>
+                    <button type="button" class="ghost" id="add">+ Add event</button>
+                    <button type="button" class="ghost" id="reset" title="Forget saved events and show the defaults">Reset</button>
+                    <button type="button" class="ghost" id="copy-link" title="Copy a sharable link that opens these events">Copy</button>
+                </div>
+                <div>
+                    <button type="button" class="ghost" id="cancel">Cancel</button>
+                    <button type="submit">Update</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@pqina/flip@1.8.4/dist/flip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
