@@ -10,8 +10,9 @@ var MAX = 12;
 var DEFAULT_COLOR = '#818cf8';
 var DEFAULT_UP_COLOR = '#f59e0b';
 
-// units is a contiguous run of Tick format keys, largest first, e.g. 'yMdhms', 'dhm', 'hms'.
+// units contains selected Tick format keys, largest first.
 var ALL_UNITS = 'yMdhms';
+var UNIT_ORDER = 'yMwdhms';
 
 function formatFor(units) {
     return units.split('');
@@ -20,8 +21,9 @@ function formatFor(units) {
 function toUnits(u) {
     u = u || '';
     // Legacy format used a lowercase 'm' prefix for months.
-    if (/^y?m?dhms$/.test(u)) return (u[0] === 'y' ? 'yM' : u[0] === 'm' ? 'M' : '') + 'dhms';
-    return u && ALL_UNITS.indexOf(u) !== -1 ? u : ALL_UNITS;
+    if (/^(ym|m)dhms$/.test(u)) return (u[0] === 'y' ? 'yM' : 'M') + 'dhms';
+    if (!/^[yMwdhms]+$/.test(u)) return ALL_UNITS;
+    return UNIT_ORDER.split('').filter(function (unit) { return u.indexOf(unit) !== -1; }).join('');
 }
 
 function toColor(value, fallback) {
@@ -283,12 +285,13 @@ function addRow(c) {
         '<input type="datetime-local" name="d" required>' +
         '<input type="text" name="message" maxlength="120" placeholder="Message" aria-label="Message">' +
         '<div class="chips" role="group" aria-label="Units shown">' +
-            '<button type="button" class="chip" data-unit="y" title="Years">Y</button>' +
-            '<button type="button" class="chip" data-unit="M" title="Months">M</button>' +
-            '<button type="button" class="chip" data-unit="d" title="Days">D</button>' +
-            '<button type="button" class="chip" data-unit="h" title="Hours">H</button>' +
-            '<button type="button" class="chip" data-unit="m" title="Minutes">M</button>' +
-            '<button type="button" class="chip" data-unit="s" title="Seconds">S</button>' +
+                '<button type="button" class="chip" data-unit="y" title="Years" aria-label="Years">Y</button>' +
+                '<button type="button" class="chip" data-unit="M" title="Months" aria-label="Months">M</button>' +
+                '<button type="button" class="chip" data-unit="w" title="Weeks" aria-label="Weeks">W</button>' +
+                '<button type="button" class="chip" data-unit="d" title="Days" aria-label="Days">D</button>' +
+                '<button type="button" class="chip" data-unit="h" title="Hours" aria-label="Hours">H</button>' +
+                '<button type="button" class="chip" data-unit="m" title="Minutes" aria-label="Minutes">M</button>' +
+                '<button type="button" class="chip" data-unit="s" title="Seconds" aria-label="Seconds">S</button>' +
         '</div>' +
         '<input type="hidden" name="u">' +
         '<input type="color" name="c" aria-label="Counting down colour" title="Counting down colour">' +
@@ -303,19 +306,27 @@ function addRow(c) {
         '<button type="button" class="ghost remove" aria-label="Remove event" title="Remove">&times;</button>';
     var units = row.querySelector('[name=u]');
     var chips = row.querySelectorAll('.chip');
-    var first = ALL_UNITS.indexOf(c.units);
-    var last = first + c.units.length - 1;
+    var selected = toUnits(c.units);
     var render = function () {
-        chips.forEach(function (chip, j) {
-            chip.setAttribute('aria-pressed', j >= first && j <= last);
+        units.value = selected;
+        chips.forEach(function (chip) {
+            var pressed = selected.indexOf(chip.dataset.unit) !== -1;
+            chip.setAttribute('aria-pressed', pressed);
+            chip.disabled = pressed && selected.length === 1;
+            chip.title = chip.getAttribute('aria-label') + ': ' + (chip.disabled
+                ? 'At least one unit must stay selected'
+                : 'Click to ' + (pressed ? 'hide' : 'show'));
         });
-        units.value = ALL_UNITS.slice(first, last + 1);
     };
-    // Clicking a unit selects it and every smaller unit, and clears all larger ones.
-    chips.forEach(function (chip, i) {
+    chips.forEach(function (chip) {
         chip.addEventListener('click', function () {
-            first = i;
-            last = chips.length - 1;
+            var unit = chip.dataset.unit;
+            if (selected.indexOf(unit) !== -1) {
+                if (selected.length === 1) return;
+                selected = selected.replace(unit, '');
+            } else {
+                selected = toUnits(selected + unit);
+            }
             render();
         });
     });
