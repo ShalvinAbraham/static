@@ -277,6 +277,25 @@ function celebrateArrival(card) {
     }, 1800);
 }
 
+function moveRow(row, before, draggedRow) {
+    var positions = Array.prototype.map.call(rows.children, function (item) {
+        return { item: item, top: item.getBoundingClientRect().top };
+    });
+    positions.forEach(function (position) {
+        position.item.getAnimations().forEach(function (animation) { animation.cancel(); });
+    });
+    rows.insertBefore(row, before);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    positions.forEach(function (position) {
+        if (position.item === draggedRow) return;
+        var distance = position.top - position.item.getBoundingClientRect().top;
+        if (distance) position.item.animate([
+            { transform: 'translateY(' + distance + 'px)' },
+            { transform: 'translateY(0)' }
+        ], { duration: 180, easing: 'ease-out' });
+    });
+}
+
 function addRow(c) {
     var row = document.createElement('div');
     row.className = 'edit-row';
@@ -343,46 +362,72 @@ function addRow(c) {
     var grip = row.querySelector('.grip');
     grip.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowUp' && row.previousElementSibling) {
-            rows.insertBefore(row, row.previousElementSibling);
+            moveRow(row, row.previousElementSibling);
         } else if (e.key === 'ArrowDown' && row.nextElementSibling) {
-            rows.insertBefore(row.nextElementSibling, row);
+            moveRow(row, row.nextElementSibling.nextElementSibling);
         } else {
             return;
         }
         e.preventDefault();
-        row.classList.remove('moved');
-        void row.offsetWidth; // restart the animation on repeated moves
-        row.classList.add('moved');
         grip.focus();
     });
-    // Dragging the grip moves the row with the pointer.
     grip.addEventListener('pointerdown', function (e) {
+        if (!e.isPrimary || e.button !== 0) return;
+        e.preventDefault();
+        grip.focus({ preventScroll: true });
+        rows.setPointerCapture(e.pointerId);
         var startY = e.clientY;
+        var pointerY = startY;
+        var startTop = row.getBoundingClientRect().top;
         var dragged = false;
+        var frame;
         row.classList.add('grabbed');
+        var draw = function () {
+            if (dragged) {
+                var bounds = dialog.getBoundingClientRect();
+                if (pointerY < bounds.top + 60) dialog.scrollTop -= 8;
+                else if (pointerY > bounds.bottom - 60) dialog.scrollTop += 8;
+                row.style.transform = '';
+                var before = null;
+                Array.prototype.some.call(rows.children, function (item) {
+                    if (item === row) return false;
+                    var center = rows.getBoundingClientRect().top + item.offsetTop + item.offsetHeight / 2;
+                    if (pointerY < center) { before = item; return true; }
+                    return false;
+                });
+                if (before !== row.nextElementSibling) moveRow(row, before, row);
+                row.style.transform = 'translateY(' + (startTop + pointerY - startY - row.getBoundingClientRect().top) + 'px)';
+            }
+            frame = requestAnimationFrame(draw);
+        };
         var onMove = function (ev) {
-            if (!dragged && Math.abs(ev.clientY - startY) < 5) return;
-            dragged = true;
-            row.classList.add('dragging');
-            var prev = row.previousElementSibling;
-            var next = row.nextElementSibling;
-            if (prev && ev.clientY < prev.getBoundingClientRect().top + prev.offsetHeight / 2) {
-                rows.insertBefore(row, prev);
-            } else if (next && ev.clientY > next.getBoundingClientRect().top + next.offsetHeight / 2) {
-                rows.insertBefore(next, row);
-            } else {
-                return;
+            if (ev.pointerId !== e.pointerId) return;
+            pointerY = ev.clientY;
+            if (!dragged && Math.abs(pointerY - startY) >= 5) {
+                dragged = true;
+                row.classList.add('dragging');
             }
         };
-        var onUp = function () {
-            document.removeEventListener('pointermove', onMove);
-            document.removeEventListener('pointerup', onUp);
-            document.removeEventListener('pointercancel', onUp);
+        var onUp = function (ev) {
+            if (ev.pointerId !== e.pointerId) return;
+            cancelAnimationFrame(frame);
+            rows.removeEventListener('pointermove', onMove);
+            rows.removeEventListener('pointerup', onUp);
+            rows.removeEventListener('pointercancel', onUp);
+            rows.removeEventListener('lostpointercapture', onUp);
+            var offset = row.style.transform;
+            row.style.transform = '';
             row.classList.remove('dragging', 'grabbed');
+            grip.focus({ preventScroll: true });
+            if (offset && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                row.animate([{ transform: offset }, { transform: 'translateY(0)' }], { duration: 180, easing: 'ease-out' });
+            }
         };
-        document.addEventListener('pointermove', onMove);
-        document.addEventListener('pointerup', onUp);
-        document.addEventListener('pointercancel', onUp);
+        rows.addEventListener('pointermove', onMove);
+        rows.addEventListener('pointerup', onUp);
+        rows.addEventListener('pointercancel', onUp);
+        rows.addEventListener('lostpointercapture', onUp);
+        frame = requestAnimationFrame(draw);
     });
     rows.appendChild(row);
     updateRows();
@@ -401,18 +446,70 @@ function resetRows() {
     counters.forEach(addRow);
 }
 
-var editTpl = document.getElementById('edit-btn-tpl').content.firstElementChild;
-Array.prototype.forEach.call(grid.children, function (card) {
-    var editBtn = editTpl.cloneNode(true);
-    card.appendChild(editBtn);
-    editBtn.addEventListener('click', function () {
-        resetRows();
-        dialog.showModal();
-    });
+var settingsToggle = document.getElementById('settings-toggle');
+var closeTimer;
+if (window.lucide) window.lucide.createIcons();
+
+function openEditor(side) {
+    if (dialog.open) return;
+    clearTimeout(closeTimer);
+    dialog.classList.remove('closing');
+    dialog.dataset.side = side || 'right';
+    resetRows();
+    dialog.showModal();
+    settingsToggle.setAttribute('aria-expanded', 'true');
+}
+
+function closeEditor() {
+    if (!dialog.open || dialog.classList.contains('closing')) return;
+    dialog.classList.add('closing');
+    closeTimer = setTimeout(function () { dialog.close(); },
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220);
+}
+
+settingsToggle.addEventListener('click', function () { openEditor('right'); });
+document.getElementById('close-editor').addEventListener('click', closeEditor);
+dialog.addEventListener('cancel', function (e) { e.preventDefault(); closeEditor(); });
+dialog.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); closeEditor(); }
+});
+dialog.addEventListener('close', function () {
+    settingsToggle.setAttribute('aria-expanded', 'false');
+    dialog.classList.remove('closing');
+    settingsToggle.focus({ preventScroll: true });
+});
+dialog.addEventListener('click', function (e) {
+    var bounds = dialog.getBoundingClientRect();
+    if (e.target === dialog && (e.clientX < bounds.left || e.clientX > bounds.right)) closeEditor();
 });
 
+var swipe;
+document.addEventListener('pointerdown', function (e) {
+    swipe = null;
+    if (e.pointerType !== 'touch' || !e.isPrimary || !window.matchMedia('(max-width: 64rem)').matches) return;
+    if (dialog.open) {
+        if (!e.target.closest('.editor-header') || e.target.closest('button')) return;
+        swipe = { x: e.clientX, y: e.clientY, side: dialog.dataset.side, closing: true, id: e.pointerId };
+    } else if (e.clientX < 32 || e.clientX > window.innerWidth - 32) {
+        swipe = { x: e.clientX, y: e.clientY, side: e.clientX < 32 ? 'left' : 'right', id: e.pointerId };
+    }
+});
+document.addEventListener('pointerup', function (e) {
+    if (!swipe || swipe.id !== e.pointerId) return;
+    var gesture = swipe;
+    swipe = null;
+    var delta = e.clientX - gesture.x;
+    var direction = gesture.side === 'left' ? 1 : -1;
+    if (gesture.closing) direction *= -1;
+    if (delta * direction > 60 && Math.abs(delta) > Math.abs(e.clientY - gesture.y) * 1.5) {
+        if (gesture.closing) closeEditor();
+        else openEditor(gesture.side);
+    }
+});
+document.addEventListener('pointercancel', function () { swipe = null; });
+
 document.getElementById('cancel').addEventListener('click', function () {
-    dialog.close();
+    closeEditor();
 });
 
 addBtn.addEventListener('click', function () {
